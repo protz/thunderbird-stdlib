@@ -15,6 +15,8 @@ run_all() {
   # head.js will check this variable to figure out where our fake profile
   # directory should point to
   export XPCSHELL_TEST_PROFILE_DIR=$PROFD
+  # Should help
+  export MOZ_REPORT_ALL_JS_EXCEPTIONS=1
   # Make it available in the modules/ directory xpcshell will "see"
   \cp ../SimpleStorage.js $TB_OBJDIR/mozilla/dist/bin/modules/
   # Fake a directory structure similar to that of conversations so that the

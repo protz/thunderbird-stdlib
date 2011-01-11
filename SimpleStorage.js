@@ -34,7 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var EXPORTED_SYMBOLS = ['SimpleStorage', 'spin', 'kWorkDone']
+var EXPORTED_SYMBOLS = ['SimpleStorage']
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
@@ -45,14 +45,48 @@ Cu.import("resource://conversations/log.js");
 let Log = setupLogging("Conversations.SimpleStorage");
 Log.debug("Simple Storage loaded.");
 
-let JSON = Cc["@mozilla.org/dom/json;1"]
-           .createInstance(Ci.nsIJSON);
 let gStorageService = Cc["@mozilla.org/storage/service;1"]  
                       .getService(Ci.mozIStorageService);  
 let gDbFile = Cc["@mozilla.org/file/directory_service;1"]  
               .getService(Ci.nsIProperties)  
               .get("ProfD", Ci.nsIFile);  
 gDbFile.append("simple_storage.sqlite");  
+
+const kWorkDone = 42;
+
+let SimpleStorage = {
+  createCpsStyle: function _SimpleStorage_createCps (aTblName) {
+    return new SimpleStorageCps(aTblName);
+  },
+
+  createIteratorStyle: function _SimpleStorage_createForIterator (aTblName) {
+    let cps = new SimpleStorageCps(aTblName);
+    return new SimpleStorageIterator(cps);
+  },
+
+  createPromisesStyle: function _SimpleStorage_createPromisesStyle (aTblName) {
+    let cps = new SimpleStorageCps(aTblName);
+    return new SimpleStoragePromises(cps);
+  },
+
+  kWorkDone: kWorkDone,
+
+  spin: function _SimpleStorage_spin(f) {
+    let iterator = f();
+    // Note: As a point of interest, calling send(undefined) is equivalent
+    // to calling next(). However, starting a newborn generator with any value
+    // other than undefined when calling send() will result in a TypeError
+    // exception.
+    (function send(r) {
+      let asyncFunction = iterator.send(r);
+      if (asyncFunction !== kWorkDone) {
+        asyncFunction(function (r) {
+          send(r);
+        });
+      }
+    })();
+  },
+};
 
 /**
  * Open a new storage instance.
@@ -61,7 +95,7 @@ gDbFile.append("simple_storage.sqlite");
  *  the GUID of your extension, for instance.
  * @return A new SimpleStorage instance.
  */
-function SimpleStorage(aTblName) {
+function SimpleStorageCps(aTblName) {
   // Will also create the file if it does not exist  
   this.dbConnection = gStorageService.openDatabase(gDbFile);
   if (!this.dbConnection.tableExists(aTblName))
@@ -71,7 +105,7 @@ function SimpleStorage(aTblName) {
   this.tableName = aTblName;
 }
 
-SimpleStorage.prototype = {
+SimpleStorageCps.prototype = {
   /**
    * Find the data associated to the given key.
    * @param {String} aKey The key used to identify your data.
@@ -106,7 +140,7 @@ SimpleStorage.prototype = {
           if (results.length > 1) {
             Log.assert(false, "Multiple rows for the same primary key? That's impossible!");
           } else if (results.length == 1) {
-            k(JSON.decode(results[0]).value);
+            k(JSON.parse(results[0]).value);
           } else if (results.length == 0) {
             k(null);
           }
@@ -114,10 +148,6 @@ SimpleStorage.prototype = {
       }
     });
   },
-
-  sGet: function _SimpleStorage_sGet (aKey) (function (finish) {
-    this.get(aKey, function (result) finish(result));
-  }).bind(this),
 
   /**
    * Store data for the given key. It will erase any previous binding if any,
@@ -136,7 +166,7 @@ SimpleStorage.prototype = {
       ;
       let statement = this.dbConnection.createStatement(query.replace("#1", this.tableName));
       statement.params.key = aKey;
-      statement.params.value = JSON.encode({ value: aValue });
+      statement.params.value = JSON.stringify({ value: aValue });
       statement.executeAsync({
         handleResult: function(aResultSet) {
         },
@@ -158,10 +188,6 @@ SimpleStorage.prototype = {
     }).bind(this));
   },
 
-  sSet: function _SimpleStorage_sSet (aKey, aValue) (function (finish) {
-    this.set(aKey, aValue, function (result) finish(result));
-  }).bind(this),
-
   /**
    * Check whether there is data associated to the given key.
    * @param {String} aKey The key.
@@ -172,10 +198,6 @@ SimpleStorage.prototype = {
       k(aVal != null);
     });
   },
-
-  sHas: function _SimpleStorage_sHas (aKey) (function (finish) {
-    this.has(aKey, function (result) finish(result));
-  }).bind(this),
 
   /**
    * Remove data associated with the given key.
@@ -212,26 +234,47 @@ SimpleStorage.prototype = {
       }
     }).bind(this));
   },
-
-  sRemove: function _SimpleStorage_sRemove (aKey) (function (finish) {
-    this.remove(aKey, function (result) finish(result));
-  }).bind(this),
 }
 
-const kWorkDone = 42;
+/**
+ * This is another version of the API that offers the appearance of a
+ *  synchronous API. Basically, a call to get now returns a function that takes
+ *  one argument, that is, the function that it is expected to call to restart
+ *  the original computation.
+ * You are to use it like this:
+ *
+ *  SimpleStorage.spin(function anon () {
+ *    let r = yield get("myKey");
+ *    // do stuff with r
+ *  });
+ *
+ *  What happens is the anon function is suspended as soon as it yields. If we
+ *   call f the function returned by get("myKey"), then spin is the driver that
+ *   will run f, and is expected to call the argument it's passed one it's done.
+ *   That argument is a function that takes the result that is to be returned
+ *   when it restarts the anon function (the value that ends up being r).
+ *  This is exactly what our little wrappers below do.
+ */
+function SimpleStorageIterator(aSimpleStorage) {
+  this.ss = aSimpleStorage;
+}
 
-function spin(f) {
-  let iterator = f();
-  // Note: As a point of interest, calling send(undefined) is equivalent
-  // to calling next(). However, starting a newborn generator with any value
-  // other than undefined when calling send() will result in a TypeError
-  // exception.
-  (function send(r) {
-    let asyncFunction = iterator.send(r);
-    if (asyncFunction !== kWorkDone) {
-      asyncFunction(function (r) {
-        send(r);
-      });
-    }
-  })();
+SimpleStorageIterator.prototype = {
+
+  get: function _SimpleStorage_get (aKey) (function (finish) {
+    this.get(aKey, function (result) finish(result));
+  }).bind(this.ss),
+
+  set: function _SimpleStorage_set (aKey, aValue) (function (finish) {
+    this.set(aKey, aValue, function (result) finish(result));
+  }).bind(this.ss),
+
+  has: function _SimpleStorage_has (aKey) (function (finish) {
+    this.has(aKey, function (result) finish(result));
+  }).bind(this.ss),
+
+  remove: function _SimpleStorage_remove (aKey) (function (finish) {
+    this.remove(aKey, function (result) finish(result));
+  }).bind(this.ss),
+
 }

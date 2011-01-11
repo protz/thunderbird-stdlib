@@ -48,21 +48,21 @@ Cu.import("resource:///modules/SimpleStorage.js");
 let remainingThreads = 0;
 
 function test_sync_api () {
-  spin(function () {
-    let ss = new SimpleStorage("test");
+  SimpleStorage.spin(function () {
+    let ss = SimpleStorage.createIteratorStyle("test");
     let r;
 
-    r = yield ss.sHas("myKey");
+    r = yield ss.has("myKey");
     do_check_false(r);
-    r = yield ss.sSet("myKey", "myVal");
+    r = yield ss.set("myKey", "myVal");
     do_check_true(r); // Value was added
-    r = yield ss.sGet("myKey");
+    r = yield ss.get("myKey");
     do_check_true(r == "myVal");
 
     let o = { k1: "v1", k2: "v2" };
-    r = yield ss.sSet("myKey", o);
+    r = yield ss.set("myKey", o);
     do_check_false(r); // Value was updated in-place
-    r = yield ss.sGet("myKey");
+    r = yield ss.get("myKey");
     for each (key in Object.keys(r))
       do_check_true(r[key] == o[key]);
     for each (key in Object.keys(o))
@@ -70,20 +70,20 @@ function test_sync_api () {
 
     // Test nested async actions. Not recommended for the casual user because of
     // the very specific order of finish vs. yield kWorkDone.
-    yield (function (finish) (spin (function () {
-      r = yield ss.sRemove("myKey");
+    yield (function (finish) (SimpleStorage.spin (function () {
+      r = yield ss.remove("myKey");
       do_check_true(r);
-      r = yield ss.sRemove("myKey");
+      r = yield ss.remove("myKey");
       do_check_false(r);
       finish();
       yield kWorkDone; // Remember, nothing is executed past that line
     })));
 
-    r = yield ss.sHas("myKey");
+    r = yield ss.has("myKey");
     do_check_false(r);
     dump("\033[01;34m--- async api test is over\033[00m\n");
     remainingThreads--;
-    yield kWorkDone;
+    yield SimpleStorage.kWorkDone;
   });
 }
 
