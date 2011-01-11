@@ -45,8 +45,8 @@ Cu.import("resource://conversations/log.js");
 let Log = setupLogging("Conversations.SimpleStorage");
 Log.debug("Simple Storage loaded.");
 
-let JSON = Components.classes["@mozilla.org/dom/json;1"]
-                 .createInstance(Components.interfaces.nsIJSON);
+let JSON = Cc["@mozilla.org/dom/json;1"]
+           .createInstance(Ci.nsIJSON);
 let gStorageService = Cc["@mozilla.org/storage/service;1"]  
                       .getService(Ci.mozIStorageService);  
 let gDbFile = Cc["@mozilla.org/file/directory_service;1"]  
@@ -134,8 +134,7 @@ SimpleStorage.prototype = {
         ? "UPDATE #1 SET value = :value WHERE key = :key"
         : "INSERT INTO #1 (key, value) VALUES (:key, :value)"
       ;
-      let statement = this.dbConnection
-        .createStatement(query.replace("#1", this.tableName));
+      let statement = this.dbConnection.createStatement(query.replace("#1", this.tableName));
       statement.params.key = aKey;
       statement.params.value = JSON.encode({ value: aValue });
       statement.executeAsync({

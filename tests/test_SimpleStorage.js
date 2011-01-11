@@ -55,23 +55,30 @@ function test_sync_api () {
     r = yield ss.sHas("myKey");
     do_check_false(r);
     r = yield ss.sSet("myKey", "myVal");
-    do_check_true(r);
+    do_check_true(r); // Value was added
     r = yield ss.sGet("myKey");
     do_check_true(r == "myVal");
 
     let o = { k1: "v1", k2: "v2" };
     r = yield ss.sSet("myKey", o);
-    do_check_false(r);
+    do_check_false(r); // Value was updated in-place
     r = yield ss.sGet("myKey");
     for each (key in Object.keys(r))
       do_check_true(r[key] == o[key]);
     for each (key in Object.keys(o))
       do_check_true(r[key] == o[key]);
 
-    r = yield ss.sRemove("myKey");
-    do_check_true(r);
-    r = yield ss.sRemove("myKey");
-    do_check_false(r);
+    // Test nested async actions. Not recommended for the casual user because of
+    // the very specific order of finish vs. yield kWorkDone.
+    yield (function (finish) (spin (function () {
+      r = yield ss.sRemove("myKey");
+      do_check_true(r);
+      r = yield ss.sRemove("myKey");
+      do_check_false(r);
+      finish();
+      yield kWorkDone; // Remember, nothing is executed past that line
+    })));
+
     r = yield ss.sHas("myKey");
     do_check_false(r);
     dump("\033[01;34m--- async api test is over\033[00m\n");
