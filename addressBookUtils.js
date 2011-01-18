@@ -53,7 +53,9 @@ const Cr = Components.results;
 const rdfService = Cc["@mozilla.org/rdf/rdf-service;1"]
                    .getService(Ci.nsIRDFService);
 
+/** @const */
 const kPersonalAddressBookUri = "moz-abmdbdirectory://abook.mab";
+/** @const */
 const kCollectedAddressBookUri = "moz-abmdbdirectory://history.mab";
 
 /**
