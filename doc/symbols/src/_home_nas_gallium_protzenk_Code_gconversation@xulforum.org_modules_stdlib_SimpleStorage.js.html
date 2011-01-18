@@ -1,0 +1,324 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"> <style>
+	.KEYW {color: #933;}
+	.COMM {color: #bbb; font-style: italic;}
+	.NUMB {color: #393;}
+	.STRN {color: #393;}
+	.REGX {color: #339;}
+	.line {border-right: 1px dotted #666; color: #666; font-style: normal;}
+	</style></head><body><pre><span class='line'>  1</span> <span class="COMM">/* ***** BEGIN LICENSE BLOCK *****
+<span class='line'>  2</span>  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+<span class='line'>  3</span>  *
+<span class='line'>  4</span>  * The contents of this file are subject to the Mozilla Public License Version
+<span class='line'>  5</span>  * 1.1 (the "License"); you may not use this file except in compliance with
+<span class='line'>  6</span>  * the License. You may obtain a copy of the License at
+<span class='line'>  7</span>  * http://www.mozilla.org/MPL/
+<span class='line'>  8</span>  *
+<span class='line'>  9</span>  * Software distributed under the License is distributed on an "AS IS" basis,
+<span class='line'> 10</span>  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+<span class='line'> 11</span>  * for the specific language governing rights and limitations under the
+<span class='line'> 12</span>  * License.
+<span class='line'> 13</span>  *
+<span class='line'> 14</span>  * The Original Code is Thunderbird Conversations
+<span class='line'> 15</span>  *
+<span class='line'> 16</span>  * The Initial Developer of the Original Code is
+<span class='line'> 17</span>  *  Jonathan Protzenko &lt;jonathan.protzenko@gmail.com>
+<span class='line'> 18</span>  * Portions created by the Initial Developer are Copyright (C) 2010
+<span class='line'> 19</span>  * the Initial Developer. All Rights Reserved.
+<span class='line'> 20</span>  *
+<span class='line'> 21</span>  * Contributor(s):
+<span class='line'> 22</span>  *
+<span class='line'> 23</span>  * Alternatively, the contents of this file may be used under the terms of
+<span class='line'> 24</span>  * either the GNU General Public License Version 2 or later (the "GPL"), or
+<span class='line'> 25</span>  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+<span class='line'> 26</span>  * in which case the provisions of the GPL or the LGPL are applicable instead
+<span class='line'> 27</span>  * of those above. If you wish to allow use of your version of this file only
+<span class='line'> 28</span>  * under the terms of either the GPL or the LGPL, and not to allow others to
+<span class='line'> 29</span>  * use your version of this file under the terms of the MPL, indicate your
+<span class='line'> 30</span>  * decision by deleting the provisions above and replace them with the notice
+<span class='line'> 31</span>  * and other provisions required by the GPL or the LGPL. If you do not delete
+<span class='line'> 32</span>  * the provisions above, a recipient may use your version of this file under
+<span class='line'> 33</span>  * the terms of any one of the MPL, the GPL or the LGPL.
+<span class='line'> 34</span>  *
+<span class='line'> 35</span>  * ***** END LICENSE BLOCK ***** */</span><span class="WHIT">
+<span class='line'> 36</span> 
+<span class='line'> 37</span> </span><span class="COMM">/**
+<span class='line'> 38</span>  * @fileoverview This file exports the SimpleStorage wrapper around mozStorage.
+<span class='line'> 39</span>  *  It is designed to help you use mozStorage is a simple get/set/has/remove
+<span class='line'> 40</span>  *  API.
+<span class='line'> 41</span>  * @author Jonathan Protzenko
+<span class='line'> 42</span>  */</span><span class="WHIT">
+<span class='line'> 43</span> 
+<span class='line'> 44</span> </span><span class="KEYW">var</span><span class="WHIT"> </span><span class="NAME">EXPORTED_SYMBOLS</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">[</span><span class="STRN">'SimpleStorage'</span><span class="PUNC">]</span><span class="WHIT">
+<span class='line'> 45</span> 
+<span class='line'> 46</span> </span><span class="KEYW">const</span><span class="WHIT"> </span><span class="NAME">Ci</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Components.interfaces</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 47</span> </span><span class="KEYW">const</span><span class="WHIT"> </span><span class="NAME">Cc</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Components.classes</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 48</span> </span><span class="KEYW">const</span><span class="WHIT"> </span><span class="NAME">Cu</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Components.utils</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 49</span> </span><span class="KEYW">const</span><span class="WHIT"> </span><span class="NAME">Cr</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Components.results</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 50</span> 
+<span class='line'> 51</span> </span><span class="NAME">Cu.import</span><span class="PUNC">(</span><span class="STRN">"resource://conversations/log.js"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 52</span> </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">Log</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">setupLogging</span><span class="PUNC">(</span><span class="STRN">"Conversations.SimpleStorage"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 53</span> </span><span class="NAME">Log.debug</span><span class="PUNC">(</span><span class="STRN">"Simple Storage loaded."</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 54</span> 
+<span class='line'> 55</span> </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">gStorageService</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Cc</span><span class="PUNC">[</span><span class="STRN">"@mozilla.org/storage/service;1"</span><span class="PUNC">]</span><span class="WHIT">  
+<span class='line'> 56</span>                       </span><span class="PUNC">.</span><span class="NAME">getService</span><span class="PUNC">(</span><span class="NAME">Ci.mozIStorageService</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">  
+<span class='line'> 57</span> </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">gDbFile</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">Cc</span><span class="PUNC">[</span><span class="STRN">"@mozilla.org/file/directory_service;1"</span><span class="PUNC">]</span><span class="WHIT">  
+<span class='line'> 58</span>               </span><span class="PUNC">.</span><span class="NAME">getService</span><span class="PUNC">(</span><span class="NAME">Ci.nsIProperties</span><span class="PUNC">)</span><span class="WHIT">  
+<span class='line'> 59</span>               </span><span class="PUNC">.</span><span class="NAME">get</span><span class="PUNC">(</span><span class="STRN">"ProfD"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">Ci.nsIFile</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">  
+<span class='line'> 60</span> </span><span class="NAME">gDbFile.append</span><span class="PUNC">(</span><span class="STRN">"simple_storage.sqlite"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">  
+<span class='line'> 61</span> 
+<span class='line'> 62</span> </span><span class="COMM">/**
+<span class='line'> 63</span>  * The global SimpleStorage object. It has various method to instanciate a
+<span class='line'> 64</span>  *  storage session with a given style. You should not have two different styles
+<span class='line'> 65</span>  *  of API open at the same time on the same table.
+<span class='line'> 66</span>  * @namespace
+<span class='line'> 67</span>  */</span><span class="WHIT">
+<span class='line'> 68</span> </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">SimpleStorage</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'> 69</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'> 70</span>    * Probably the easiest style to use. Function just take a callback (or
+<span class='line'> 71</span>    *  continuation) that will be called once the asynchronous storage operation
+<span class='line'> 72</span>    *  is done.
+<span class='line'> 73</span>    * @param {String} aTblName The table name you wish to use. You can prefix it
+<span class='line'> 74</span>    *  with your extension's GUID since it will be shared by all extensions
+<span class='line'> 75</span>    *  running on the same profile.
+<span class='line'> 76</span>    * @returns {SimpleStorageCps}
+<span class='line'> 77</span>    */</span><span class="WHIT">
+<span class='line'> 78</span> </span><span class="WHIT">  </span><span class="NAME">createCpsStyle</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_createCps</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'> 79</span> </span><span class="WHIT">    </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="KEYW">new</span><span class="WHIT"> </span><span class="NAME">SimpleStorageCps</span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'> 80</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'> 81</span> 
+<span class='line'> 82</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'> 83</span>    * This is another version of the API that offers the appearance of a
+<span class='line'> 84</span>    *  synchronous API. Basically, a call to get now returns a function that takes
+<span class='line'> 85</span>    *  one argument, that is, the function that it is expected to call to restart
+<span class='line'> 86</span>    *  the original computation.
+<span class='line'> 87</span>    * You are to use it like this:
+<span class='line'> 88</span>    *
+<span class='line'> 89</span>    * &lt;pre>
+<span class='line'> 90</span>    *  let ss = SimpleStorage.createIteratorStyle("my-tbl");
+<span class='line'> 91</span>    *  SimpleStorage.spin(function anon () {
+<span class='line'> 92</span>    *    let r = yield ss.get("myKey");
+<span class='line'> 93</span>    *    // do stuff with r
+<span class='line'> 94</span>    *    yield SimpleStorage.kWorkDone;
+<span class='line'> 95</span>    *    // nothing is ever executed after the final yield call
+<span class='line'> 96</span>    *  });
+<span class='line'> 97</span>    * &lt;/pre>
+<span class='line'> 98</span>    *
+<span class='line'> 99</span>    *  What happens is the anon function is suspended as soon as it yields. If we
+<span class='line'>100</span>    *   call f the function returned by ss.get("myKey"), then spin is the driver
+<span class='line'>101</span>    *   that will run f. Spin passes a function called "finish" to f, and once f
+<span class='line'>102</span>    *   is done fetching the data asynchronously, it calls finish with the result
+<span class='line'>103</span>    *   of its computation.
+<span class='line'>104</span>    *  finish then restarts the anon function with the result of the yield call
+<span class='line'>105</span>    *   being the value f just passed it.
+<span class='line'>106</span>    *
+<span class='line'>107</span>    * @param {String} aTblName
+<span class='line'>108</span>    * @returns {SimpleStorageIterator}
+<span class='line'>109</span>    */</span><span class="WHIT">
+<span class='line'>110</span> </span><span class="WHIT">  </span><span class="NAME">createIteratorStyle</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_createForIterator</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>111</span> </span><span class="WHIT">    </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">cps</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">new</span><span class="WHIT"> </span><span class="NAME">SimpleStorageCps</span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>112</span> </span><span class="WHIT">    </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="KEYW">new</span><span class="WHIT"> </span><span class="NAME">SimpleStorageIterator</span><span class="PUNC">(</span><span class="NAME">cps</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>113</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>114</span> 
+<span class='line'>115</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'>116</span>    * @TODO
+<span class='line'>117</span>    */</span><span class="WHIT">
+<span class='line'>118</span> </span><span class="WHIT">  </span><span class="NAME">createPromisesStyle</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_createPromisesStyle</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>119</span> </span><span class="WHIT">    </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">cps</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="KEYW">new</span><span class="WHIT"> </span><span class="NAME">SimpleStorageCps</span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>120</span> </span><span class="WHIT">    </span><span class="KEYW">return</span><span class="WHIT"> </span><span class="KEYW">new</span><span class="WHIT"> </span><span class="NAME">SimpleStoragePromises</span><span class="PUNC">(</span><span class="NAME">cps</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>121</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>122</span> 
+<span class='line'>123</span> </span><span class="WHIT">  </span><span class="NAME">kWorkDone</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="NAME">kWorkDone</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>124</span> 
+<span class='line'>125</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'>126</span>    * The main driver function for the iterator-style API.
+<span class='line'>127</span>    */</span><span class="WHIT">
+<span class='line'>128</span> </span><span class="WHIT">  </span><span class="NAME">spin</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_spin</span><span class="PUNC">(</span><span class="NAME">f</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>129</span> </span><span class="WHIT">    </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">iterator</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">f</span><span class="PUNC">(</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>130</span> </span><span class="WHIT">    </span><span class="COMM">// Note: As a point of interest, calling send(undefined) is equivalent</span><span class="WHIT">
+<span class='line'>131</span> </span><span class="WHIT">    </span><span class="COMM">// to calling next(). However, starting a newborn generator with any value</span><span class="WHIT">
+<span class='line'>132</span> </span><span class="WHIT">    </span><span class="COMM">// other than undefined when calling send() will result in a TypeError</span><span class="WHIT">
+<span class='line'>133</span> </span><span class="WHIT">    </span><span class="COMM">// exception.</span><span class="WHIT">
+<span class='line'>134</span> </span><span class="WHIT">    </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">send</span><span class="PUNC">(</span><span class="NAME">r</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>135</span> </span><span class="WHIT">      </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">asyncFunction</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">iterator.send</span><span class="PUNC">(</span><span class="NAME">r</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>136</span> </span><span class="WHIT">      </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">asyncFunction</span><span class="WHIT"> </span><span class="PUNC">!==</span><span class="WHIT"> </span><span class="NAME">kWorkDone</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>137</span> </span><span class="WHIT">        </span><span class="NAME">asyncFunction</span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">r</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>138</span> </span><span class="WHIT">          </span><span class="NAME">send</span><span class="PUNC">(</span><span class="NAME">r</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>139</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>140</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>141</span> </span><span class="WHIT">    </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">(</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>142</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>143</span> </span><span class="PUNC">}</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>144</span> 
+<span class='line'>145</span> </span><span class="COMM">/**
+<span class='line'>146</span>  * You should not instanciate this class directly. Use {@link SimpleStorage.createCpsStyle}.
+<span class='line'>147</span>  * @constructor
+<span class='line'>148</span>  */</span><span class="WHIT">
+<span class='line'>149</span> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">SimpleStorageCps</span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>150</span> </span><span class="WHIT">  </span><span class="COMM">// Will also create the file if it does not exist  </span><span class="WHIT">
+<span class='line'>151</span> </span><span class="WHIT">  </span><span class="NAME">this.dbConnection</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">gStorageService.openDatabase</span><span class="PUNC">(</span><span class="NAME">gDbFile</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>152</span> </span><span class="WHIT">  </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="PUNC">!</span><span class="NAME">this.dbConnection.tableExists</span><span class="PUNC">(</span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="WHIT">
+<span class='line'>153</span> </span><span class="WHIT">    </span><span class="NAME">this.dbConnection.executeSimpleSQL</span><span class="PUNC">(</span><span class="WHIT">
+<span class='line'>154</span> </span><span class="WHIT">      </span><span class="STRN">"CREATE TABLE #1 (key TEXT PRIMARY KEY, value TEXT)"</span><span class="PUNC">.</span><span class="NAME">replace</span><span class="PUNC">(</span><span class="STRN">"#1"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aTblName</span><span class="PUNC">)</span><span class="WHIT">
+<span class='line'>155</span> </span><span class="WHIT">    </span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>156</span> </span><span class="WHIT">  </span><span class="NAME">this.tableName</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aTblName</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>157</span> </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>158</span> 
+<span class='line'>159</span> </span><span class="NAME">SimpleStorageCps.prototype</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>160</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'>161</span>    * Find the data associated to the given key.
+<span class='line'>162</span>    * @param {String} aKey The key used to identify your data.
+<span class='line'>163</span>    * @param {Function} k A function that expects the javascript object you
+<span class='line'>164</span>    *  initially stored, or null.
+<span class='line'>165</span>    */</span><span class="WHIT">
+<span class='line'>166</span> </span><span class="WHIT">  </span><span class="NAME">get</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_get</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">k</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>167</span> </span><span class="WHIT">    </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">statement</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.dbConnection</span><span class="WHIT">
+<span class='line'>168</span> </span><span class="WHIT">      </span><span class="PUNC">.</span><span class="NAME">createStatement</span><span class="PUNC">(</span><span class="STRN">"SELECT value FROM #1 WHERE key = :key"</span><span class="PUNC">.</span><span class="NAME">replace</span><span class="PUNC">(</span><span class="STRN">"#1"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">this.tableName</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>169</span> </span><span class="WHIT">    </span><span class="NAME">statement.params.key</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aKey</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>170</span> </span><span class="WHIT">    </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">results</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">[</span><span class="PUNC">]</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>171</span> </span><span class="WHIT">    </span><span class="NAME">statement.executeAsync</span><span class="PUNC">(</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>172</span> </span><span class="WHIT">      </span><span class="NAME">handleResult</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aResultSet</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>173</span> </span><span class="WHIT">        </span><span class="KEYW">for</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">row</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aResultSet.getNextRow</span><span class="PUNC">(</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>174</span> </span><span class="WHIT">             </span><span class="NAME">row</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>175</span> </span><span class="WHIT">             </span><span class="NAME">row</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aResultSet.getNextRow</span><span class="PUNC">(</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>176</span> </span><span class="WHIT">          </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">value</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">row.getResultByName</span><span class="PUNC">(</span><span class="STRN">"value"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>177</span> </span><span class="WHIT">          </span><span class="NAME">results.push</span><span class="PUNC">(</span><span class="NAME">value</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>178</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>179</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>180</span> 
+<span class='line'>181</span> </span><span class="WHIT">      </span><span class="NAME">handleError</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aError</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>182</span> </span><span class="WHIT">        </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Error:"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aError.message</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>183</span> </span><span class="WHIT">        </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query was get("</span><span class="PUNC">+</span><span class="NAME">aKey</span><span class="PUNC">+</span><span class="STRN">")"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>184</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>185</span> 
+<span class='line'>186</span> </span><span class="WHIT">      </span><span class="NAME">handleCompletion</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aReason</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>187</span> </span><span class="WHIT">        </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aReason</span><span class="WHIT"> </span><span class="PUNC">!=</span><span class="WHIT"> </span><span class="NAME">Ci.mozIStorageStatementCallback.REASON_FINISHED</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>188</span> </span><span class="WHIT">          </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query canceled or aborted!"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>189</span> </span><span class="WHIT">          </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query was get("</span><span class="PUNC">+</span><span class="NAME">aKey</span><span class="PUNC">+</span><span class="STRN">")"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>190</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="WHIT"> </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>191</span> </span><span class="WHIT">          </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">results.length</span><span class="WHIT"> </span><span class="PUNC">></span><span class="WHIT"> </span><span class="NUMB">1</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>192</span> </span><span class="WHIT">            </span><span class="NAME">Log.assert</span><span class="PUNC">(</span><span class="KEYW">false</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="STRN">"Multiple rows for the same primary key? That's impossible!"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>193</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="WHIT"> </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">results.length</span><span class="WHIT"> </span><span class="PUNC">==</span><span class="WHIT"> </span><span class="NUMB">1</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>194</span> </span><span class="WHIT">            </span><span class="NAME">k</span><span class="PUNC">(</span><span class="NAME">JSON.parse</span><span class="PUNC">(</span><span class="NAME">results</span><span class="PUNC">[</span><span class="NUMB">0</span><span class="PUNC">]</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">value</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>195</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="WHIT"> </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">results.length</span><span class="WHIT"> </span><span class="PUNC">==</span><span class="WHIT"> </span><span class="NUMB">0</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>196</span> </span><span class="WHIT">            </span><span class="NAME">k</span><span class="PUNC">(</span><span class="KEYW">null</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>197</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>198</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>199</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>200</span> </span><span class="WHIT">    </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>201</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>202</span> 
+<span class='line'>203</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'>204</span>    * Store data for the given key. It will erase any previous binding if any,
+<span class='line'>205</span>    *  and you'll lose the data previously associated with that key.
+<span class='line'>206</span>    * @param {String} aKey The key.
+<span class='line'>207</span>    * @param {Object} aVal The value that is to be associated with the key.
+<span class='line'>208</span>    * @param {Function} k A function that expects one argument and will be called
+<span class='line'>209</span>    *  when the data is stored. The argument is true if the row was added, false
+<span class='line'>210</span>    *  if it was just updated.
+<span class='line'>211</span>    */</span><span class="WHIT">
+<span class='line'>212</span> </span><span class="WHIT">  </span><span class="NAME">set</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_set</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aValue</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">k</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>213</span> </span><span class="WHIT">    </span><span class="NAME">this.has</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aResult</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>214</span> </span><span class="WHIT">      </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">query</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aResult</span><span class="WHIT">
+<span class='line'>215</span> </span><span class="WHIT">        </span><span class="PUNC">?</span><span class="WHIT"> </span><span class="STRN">"UPDATE #1 SET value = :value WHERE key = :key"</span><span class="WHIT">
+<span class='line'>216</span> </span><span class="WHIT">        </span><span class="PUNC">:</span><span class="WHIT"> </span><span class="STRN">"INSERT INTO #1 (key, value) VALUES (:key, :value)"</span><span class="WHIT">
+<span class='line'>217</span> </span><span class="WHIT">      </span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>218</span> </span><span class="WHIT">      </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">statement</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.dbConnection.createStatement</span><span class="PUNC">(</span><span class="NAME">query.replace</span><span class="PUNC">(</span><span class="STRN">"#1"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">this.tableName</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>219</span> </span><span class="WHIT">      </span><span class="NAME">statement.params.key</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aKey</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>220</span> </span><span class="WHIT">      </span><span class="NAME">statement.params.value</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">JSON.stringify</span><span class="PUNC">(</span><span class="PUNC">{</span><span class="WHIT"> </span><span class="NAME">value</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="NAME">aValue</span><span class="WHIT"> </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>221</span> </span><span class="WHIT">      </span><span class="NAME">statement.executeAsync</span><span class="PUNC">(</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>222</span> </span><span class="WHIT">        </span><span class="NAME">handleResult</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aResultSet</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>223</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>224</span> 
+<span class='line'>225</span> </span><span class="WHIT">        </span><span class="NAME">handleError</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aError</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>226</span> </span><span class="WHIT">          </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Error:"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aError.message</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>227</span> </span><span class="WHIT">          </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query was get("</span><span class="PUNC">+</span><span class="NAME">aKey</span><span class="PUNC">+</span><span class="STRN">")"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>228</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>229</span> 
+<span class='line'>230</span> </span><span class="WHIT">        </span><span class="NAME">handleCompletion</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aReason</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>231</span> </span><span class="WHIT">          </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aReason</span><span class="WHIT"> </span><span class="PUNC">!=</span><span class="WHIT"> </span><span class="NAME">Ci.mozIStorageStatementCallback.REASON_FINISHED</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>232</span> </span><span class="WHIT">            </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query canceled or aborted!"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>233</span> </span><span class="WHIT">            </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query was get("</span><span class="PUNC">+</span><span class="NAME">aKey</span><span class="PUNC">+</span><span class="STRN">")"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>234</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="WHIT"> </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>235</span> </span><span class="WHIT">            </span><span class="NAME">k</span><span class="PUNC">(</span><span class="PUNC">!</span><span class="NAME">aResult</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>236</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>237</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>238</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>239</span> </span><span class="WHIT">    </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">bind</span><span class="PUNC">(</span><span class="KEYW">this</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>240</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>241</span> 
+<span class='line'>242</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'>243</span>    * Check whether there is data associated to the given key.
+<span class='line'>244</span>    * @param {String} aKey The key.
+<span class='line'>245</span>    * @param {Function} k A function that expects a boolean.
+<span class='line'>246</span>    */</span><span class="WHIT">
+<span class='line'>247</span> </span><span class="WHIT">  </span><span class="NAME">has</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_has</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">k</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>248</span> </span><span class="WHIT">    </span><span class="NAME">this.get</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aVal</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>249</span> </span><span class="WHIT">      </span><span class="NAME">k</span><span class="PUNC">(</span><span class="NAME">aVal</span><span class="WHIT"> </span><span class="PUNC">!=</span><span class="WHIT"> </span><span class="KEYW">null</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>250</span> </span><span class="WHIT">    </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>251</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>252</span> 
+<span class='line'>253</span> </span><span class="WHIT">  </span><span class="COMM">/**
+<span class='line'>254</span>    * Remove data associated with the given key.
+<span class='line'>255</span>    * @param {String} aKey The key.
+<span class='line'>256</span>    * @param {Function} k A function that expects a boolean telling whether data
+<span class='line'>257</span>    *  was actually removed or not.
+<span class='line'>258</span>    */</span><span class="WHIT">
+<span class='line'>259</span> </span><span class="WHIT">  </span><span class="NAME">remove</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_remove</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">k</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>260</span> </span><span class="WHIT">    </span><span class="NAME">this.has</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aResult</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>261</span> </span><span class="WHIT">      </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="PUNC">!</span><span class="NAME">aResult</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>262</span> </span><span class="WHIT">        </span><span class="NAME">k</span><span class="PUNC">(</span><span class="KEYW">false</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT"> </span><span class="COMM">// element was not removed</span><span class="WHIT">
+<span class='line'>263</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="WHIT"> </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>264</span> </span><span class="WHIT">        </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">query</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="STRN">"DELETE FROM #1 WHERE key = :key"</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>265</span> </span><span class="WHIT">        </span><span class="KEYW">let</span><span class="WHIT"> </span><span class="NAME">statement</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">this.dbConnection.createStatement</span><span class="PUNC">(</span><span class="NAME">query.replace</span><span class="PUNC">(</span><span class="STRN">"#1"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">this.tableName</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>266</span> </span><span class="WHIT">        </span><span class="NAME">statement.params.key</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aKey</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>267</span> </span><span class="WHIT">        </span><span class="NAME">statement.executeAsync</span><span class="PUNC">(</span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>268</span> </span><span class="WHIT">          </span><span class="NAME">handleResult</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aResultSet</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>269</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>270</span> 
+<span class='line'>271</span> </span><span class="WHIT">          </span><span class="NAME">handleError</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aError</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>272</span> </span><span class="WHIT">            </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Error:"</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aError.message</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>273</span> </span><span class="WHIT">            </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query was get("</span><span class="PUNC">+</span><span class="NAME">aKey</span><span class="PUNC">+</span><span class="STRN">")"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>274</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>275</span> 
+<span class='line'>276</span> </span><span class="WHIT">          </span><span class="NAME">handleCompletion</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="PUNC">(</span><span class="NAME">aReason</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>277</span> </span><span class="WHIT">            </span><span class="KEYW">if</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aReason</span><span class="WHIT"> </span><span class="PUNC">!=</span><span class="WHIT"> </span><span class="NAME">Ci.mozIStorageStatementCallback.REASON_FINISHED</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>278</span> </span><span class="WHIT">              </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query canceled or aborted!"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>279</span> </span><span class="WHIT">              </span><span class="NAME">Log.error</span><span class="PUNC">(</span><span class="STRN">"Query was get("</span><span class="PUNC">+</span><span class="NAME">aKey</span><span class="PUNC">+</span><span class="STRN">")"</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>280</span> </span><span class="WHIT">            </span><span class="PUNC">}</span><span class="WHIT"> </span><span class="KEYW">else</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>281</span> </span><span class="WHIT">              </span><span class="NAME">k</span><span class="PUNC">(</span><span class="KEYW">true</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT"> </span><span class="COMM">// element was removed</span><span class="WHIT">
+<span class='line'>282</span> </span><span class="WHIT">            </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>283</span> </span><span class="WHIT">          </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>284</span> </span><span class="WHIT">        </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>285</span> </span><span class="WHIT">      </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>286</span> </span><span class="WHIT">    </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">bind</span><span class="PUNC">(</span><span class="KEYW">this</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>287</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>288</span> </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>289</span> 
+<span class='line'>290</span> </span><span class="COMM">/**
+<span class='line'>291</span>  * You should not instanciate this class directly. Use {@link SimpleStorage.createIteratorStyle}.
+<span class='line'>292</span>  * @constructor
+<span class='line'>293</span>  */</span><span class="WHIT">
+<span class='line'>294</span> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">SimpleStorageIterator</span><span class="PUNC">(</span><span class="NAME">aSimpleStorage</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>295</span> </span><span class="WHIT">  </span><span class="NAME">this.ss</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="NAME">aSimpleStorage</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>296</span> </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>297</span> 
+<span class='line'>298</span> </span><span class="NAME">SimpleStorageIterator.prototype</span><span class="WHIT"> </span><span class="PUNC">=</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>299</span> 
+<span class='line'>300</span> </span><span class="WHIT">  </span><span class="NAME">get</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_get</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">finish</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>301</span> </span><span class="WHIT">    </span><span class="NAME">this.get</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="NAME">finish</span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>302</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">bind</span><span class="PUNC">(</span><span class="NAME">this.ss</span><span class="PUNC">)</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>303</span> 
+<span class='line'>304</span> </span><span class="WHIT">  </span><span class="NAME">set</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_set</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aValue</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">finish</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>305</span> </span><span class="WHIT">    </span><span class="NAME">this.set</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="NAME">aValue</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="NAME">finish</span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>306</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">bind</span><span class="PUNC">(</span><span class="NAME">this.ss</span><span class="PUNC">)</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>307</span> 
+<span class='line'>308</span> </span><span class="WHIT">  </span><span class="NAME">has</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_has</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">finish</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>309</span> </span><span class="WHIT">    </span><span class="NAME">this.has</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="NAME">finish</span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>310</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">bind</span><span class="PUNC">(</span><span class="NAME">this.ss</span><span class="PUNC">)</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>311</span> 
+<span class='line'>312</span> </span><span class="WHIT">  </span><span class="NAME">remove</span><span class="PUNC">:</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="NAME">_SimpleStorage_remove</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">finish</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="PUNC">{</span><span class="WHIT">
+<span class='line'>313</span> </span><span class="WHIT">    </span><span class="NAME">this.remove</span><span class="PUNC">(</span><span class="NAME">aKey</span><span class="PUNC">,</span><span class="WHIT"> </span><span class="KEYW">function</span><span class="WHIT"> </span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="WHIT"> </span><span class="NAME">finish</span><span class="PUNC">(</span><span class="NAME">result</span><span class="PUNC">)</span><span class="PUNC">)</span><span class="PUNC">;</span><span class="WHIT">
+<span class='line'>314</span> </span><span class="WHIT">  </span><span class="PUNC">}</span><span class="PUNC">)</span><span class="PUNC">.</span><span class="NAME">bind</span><span class="PUNC">(</span><span class="NAME">this.ss</span><span class="PUNC">)</span><span class="PUNC">,</span><span class="WHIT">
+<span class='line'>315</span> 
+<span class='line'>316</span> </span><span class="PUNC">}</span><span class="WHIT">
+<span class='line'>317</span> </span></pre></body></html>
