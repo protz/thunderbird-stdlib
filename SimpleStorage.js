@@ -59,6 +59,8 @@ let gDbFile = Cc["@mozilla.org/file/directory_service;1"]
               .get("ProfD", Ci.nsIFile);  
 gDbFile.append("simple_storage.sqlite");  
 
+const kWorkDone = 42;
+
 /**
  * The global SimpleStorage object. It has various method to instanciate a
  *  storage session with a given style. You should not have two different styles
