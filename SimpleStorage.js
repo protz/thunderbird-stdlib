@@ -34,6 +34,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/**
+ * @fileoverview This file exports the SimpleStorage wrapper around mozStorage.
+ *  It is designed to help you use mozStorage is a simple get/set/has/remove
+ *  API.
+ * @author Jonathan Protzenko
+ */
+
 var EXPORTED_SYMBOLS = ['SimpleStorage']
 
 const Ci = Components.interfaces;
@@ -52,18 +59,62 @@ let gDbFile = Cc["@mozilla.org/file/directory_service;1"]
               .get("ProfD", Ci.nsIFile);  
 gDbFile.append("simple_storage.sqlite");  
 
-const kWorkDone = 42;
-
+/**
+ * The global SimpleStorage object. It has various method to instanciate a
+ *  storage session with a given style. You should not have two different styles
+ *  of API open at the same time on the same table.
+ * @namespace
+ */
 let SimpleStorage = {
+  /**
+   * Probably the easiest style to use. Function just take a callback (or
+   *  continuation) that will be called once the asynchronous storage operation
+   *  is done.
+   * @param {String} aTblName The table name you wish to use. You can prefix it
+   *  with your extension's GUID since it will be shared by all extensions
+   *  running on the same profile.
+   * @returns {SimpleStorageCps}
+   */
   createCpsStyle: function _SimpleStorage_createCps (aTblName) {
     return new SimpleStorageCps(aTblName);
   },
 
+  /**
+   * This is another version of the API that offers the appearance of a
+   *  synchronous API. Basically, a call to get now returns a function that takes
+   *  one argument, that is, the function that it is expected to call to restart
+   *  the original computation.
+   * You are to use it like this:
+   *
+   * <pre>
+   *  let ss = SimpleStorage.createIteratorStyle("my-tbl");
+   *  SimpleStorage.spin(function anon () {
+   *    let r = yield ss.get("myKey");
+   *    // do stuff with r
+   *    yield SimpleStorage.kWorkDone;
+   *    // nothing is ever executed after the final yield call
+   *  });
+   * </pre>
+   *
+   *  What happens is the anon function is suspended as soon as it yields. If we
+   *   call f the function returned by ss.get("myKey"), then spin is the driver
+   *   that will run f. Spin passes a function called "finish" to f, and once f
+   *   is done fetching the data asynchronously, it calls finish with the result
+   *   of its computation.
+   *  finish then restarts the anon function with the result of the yield call
+   *   being the value f just passed it.
+   *
+   * @param {String} aTblName
+   * @returns {SimpleStorageIterator}
+   */
   createIteratorStyle: function _SimpleStorage_createForIterator (aTblName) {
     let cps = new SimpleStorageCps(aTblName);
     return new SimpleStorageIterator(cps);
   },
 
+  /**
+   * @TODO
+   */
   createPromisesStyle: function _SimpleStorage_createPromisesStyle (aTblName) {
     let cps = new SimpleStorageCps(aTblName);
     return new SimpleStoragePromises(cps);
@@ -71,6 +122,9 @@ let SimpleStorage = {
 
   kWorkDone: kWorkDone,
 
+  /**
+   * The main driver function for the iterator-style API.
+   */
   spin: function _SimpleStorage_spin(f) {
     let iterator = f();
     // Note: As a point of interest, calling send(undefined) is equivalent
@@ -89,11 +143,8 @@ let SimpleStorage = {
 };
 
 /**
- * Open a new storage instance.
- * @param {String} aTblName A unique identifier that tells who you are. Other
- *  clients of SimpleStorage will also provide their own identifier. You can use
- *  the GUID of your extension, for instance.
- * @return A new SimpleStorage instance.
+ * You should not instanciate this class directly. Use {@link SimpleStorage.createCpsStyle}.
+ * @constructor
  */
 function SimpleStorageCps(aTblName) {
   // Will also create the file if it does not exist  
@@ -237,23 +288,8 @@ SimpleStorageCps.prototype = {
 }
 
 /**
- * This is another version of the API that offers the appearance of a
- *  synchronous API. Basically, a call to get now returns a function that takes
- *  one argument, that is, the function that it is expected to call to restart
- *  the original computation.
- * You are to use it like this:
- *
- *  SimpleStorage.spin(function anon () {
- *    let r = yield get("myKey");
- *    // do stuff with r
- *  });
- *
- *  What happens is the anon function is suspended as soon as it yields. If we
- *   call f the function returned by get("myKey"), then spin is the driver that
- *   will run f, and is expected to call the argument it's passed one it's done.
- *   That argument is a function that takes the result that is to be returned
- *   when it restarts the anon function (the value that ends up being r).
- *  This is exactly what our little wrappers below do.
+ * You should not instanciate this class directly. Use {@link SimpleStorage.createIteratorStyle}.
+ * @constructor
  */
 function SimpleStorageIterator(aSimpleStorage) {
   this.ss = aSimpleStorage;
