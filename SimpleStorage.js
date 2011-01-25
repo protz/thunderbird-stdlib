@@ -49,8 +49,12 @@ const Cu = Components.utils;
 const Cr = Components.results;
 
 let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
+let extPath = Cc["@mozilla.org/preferences-service;1"]
+              .getService(Ci.nsIPrefService)
+              .getBranch(null)
+              .getCharPref(ext+".path");
 
-Cu.import("resource://"+ext+"/log.js");
+Cu.import("resource://"+extPath+"/log.js");
 let Log = setupLogging(logRoot+".SimpleStorage");
 
 Log.debug("Simple Storage loaded.");

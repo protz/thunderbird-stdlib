@@ -57,11 +57,15 @@ const msgComposeService = Cc["@mozilla.org/messengercompose;1"]
 const mCompType = Ci.nsIMsgCompType;
 
 let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
+let extPath = Cc["@mozilla.org/preferences-service;1"]
+              .getService(Ci.nsIPrefService)
+              .getBranch(null)
+              .getCharPref(ext+".path");
 
-Cu.import("resource://"+ext+"/stdlib/misc.js");
-Cu.import("resource://"+ext+"/stdlib/msgHdrUtils.js");
-Cu.import("resource://"+ext+"/stdlib/compose.js");
-Cu.import("resource://"+ext+"/log.js");
+Cu.import("resource://"+extPath+"/stdlib/misc.js");
+Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
+Cu.import("resource://"+extPath+"/stdlib/compose.js");
+Cu.import("resource://"+extPath+"/log.js");
 
 let Log = setupLogging(logRoot+".Send");
 
