@@ -48,8 +48,11 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
-Cu.import("resource://conversations/log.js");
-let Log = setupLogging("Conversations.SimpleStorage");
+let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
+
+Cu.import("resource://"+ext+"/log.js");
+let Log = setupLogging(logRoot+".SimpleStorage");
+
 Log.debug("Simple Storage loaded.");
 
 let gStorageService = Cc["@mozilla.org/storage/service;1"]  

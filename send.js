@@ -56,12 +56,14 @@ const msgComposeService = Cc["@mozilla.org/messengercompose;1"]
                           .getService(Ci.nsIMsgComposeService);
 const mCompType = Ci.nsIMsgCompType;
 
-Cu.import("resource://conversations/stdlib/misc.js");
-Cu.import("resource://conversations/stdlib/msgHdrUtils.js");
-Cu.import("resource://conversations/stdlib/compose.js");
-Cu.import("resource://conversations/log.js");
+let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
 
-let Log = setupLogging("Conversations.Send");
+Cu.import("resource://"+ext+"/stdlib/misc.js");
+Cu.import("resource://"+ext+"/stdlib/msgHdrUtils.js");
+Cu.import("resource://"+ext+"/stdlib/compose.js");
+Cu.import("resource://"+ext+"/log.js");
+
+let Log = setupLogging(logRoot+".Send");
 
 /**
  * Get the Archive folder URI depending on the given identity and the given Date

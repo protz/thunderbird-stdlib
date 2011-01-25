@@ -51,14 +51,17 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+// __LOCATION__ is nsILocalFile
+let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
 Cu.import("resource://gre/modules/NetUtil.jsm");
 
-Cu.import("resource://conversations/stdlib/misc.js");
-Cu.import("resource://conversations/stdlib/msgHdrUtils.js");
-Cu.import("resource://conversations/log.js");
+Cu.import("resource://"+ext+"/stdlib/misc.js");
+Cu.import("resource://"+ext+"/stdlib/msgHdrUtils.js");
+Cu.import("resource://"+ext+"/log.js");
 
-let Log = setupLogging("Conversations.Compose");
+let Log = setupLogging(logRoot+".Stdlib");
 
 /**
  * Use the mailnews component to stream a message, and process it in a way
