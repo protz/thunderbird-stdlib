@@ -66,9 +66,8 @@ let Log = setupLogging("Conversations.Compose");
  *  that).
  * @param {nsIMsgDBHdr} aMsgHdr The message header that you want to quote
  * @param {Function} k The continuation. This function will be passed quoted
- *  text suitable for insertion in a plaintext editor. The text must be appended
- *  to the mail body "as is", it shouldn't be run again through htmlToPlainText
- *  or whatever.
+ *  text suitable for insertion in an HTML editor. You can pass this to
+ *  htmlToPlainText if you're running a plaintext editor.
  * @return
  */
 function quoteMsgHdr(aMsgHdr, k) {
@@ -85,7 +84,7 @@ function quoteMsgHdr(aMsgHdr, k) {
     /**@ignore*/
     onStopRequest: function (/* nsIRequest */ aRequest, /* nsISupports */ aContext, /* int */ aStatusCode) {
       let data = chunks.join("");
-      k(htmlToPlainText(data));
+      k(data);
     },
 
     /**@ignore*/
