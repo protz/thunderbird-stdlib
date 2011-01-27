@@ -121,9 +121,12 @@ let gMsgCompose;
  * @param composeParameters.to The recipients. This is a comma-separated list of
  *  valid email addresses that must be escaped already. You probably want to use
  *  nsIMsgHeaderParser.MakeFullAddress to deal with names that contain commas.
- * @param composeParameters.cc Same remark.
- * @param composeParameters.bcc Same remark.
+ * @param composeParameters.cc (optional) Same remark.
+ * @param composeParameters.bcc (optional) Same remark.
  * @param composeParameters.subject The subject, no restrictions on that one.
+ * @param composeParameters.returnReceipt (optional)
+ * @param composeParameters.receiptType (optional)
+ * @param composeParameters.requestDsn (optional)
  *
  * @param sendingParameters
  * @param sendingParameters.deliverType See Ci.nsIMsgCompDeliverMode
@@ -152,11 +155,13 @@ let gMsgCompose;
  *  even copy it to the Sent folder. Warning: this one assumes that the "right"
  *  Archives folder already exists.
  */
-function sendMessage({ msgHdr, identity, to, cc, bcc, subject },
+function sendMessage(params,
     { deliverType, compType },
     aNode,
     { progressListener, sendListener, stateListener },
     { popOut, archive }) {
+
+  let { msgHdr, identity, to, subject } = params;
 
   // Here is the part where we do all the stuff related to filling proper
   //  headers, adding references, making sure all the composition fields are
@@ -165,9 +170,17 @@ function sendMessage({ msgHdr, identity, to, cc, bcc, subject },
                   .createInstance(Ci.nsIMsgCompFields);
   fields.from = gHeaderParser.makeFullAddress(identity.fullName, identity.email);
   fields.to = to;
-  fields.cc = cc;
-  fields.bcc = bcc;
+  if ("cc" in params)
+    fields.cc = params.cc;
+  if ("bcc" in params)
+    fields.bcc = params.bcc;
   fields.subject = subject;
+  if ("returnReceipt" in params)
+    fields.returnReceipt = params.returnReceipt;
+  if ("receiptType" in params)
+    fields.receiptHeaderType = params.receiptType;
+  if ("requestDsn" in params)
+    fields.DSN = params.requestDsn;
 
   let references = [];
   switch (compType) {
