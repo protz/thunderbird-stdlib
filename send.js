@@ -159,7 +159,10 @@ function sendMessage(params,
     { deliverType, compType },
     aNode,
     { progressListener, sendListener, stateListener },
-    { popOut, archive }) {
+    options) {
+
+  let popOut = options && options.popOut;
+  let archive = options && options.archive;
 
   let { msgHdr, identity, to, subject } = params;
 
@@ -326,10 +329,10 @@ function sendMessage(params,
     // We create a progress listener...
     var progress = Cc["@mozilla.org/messenger/progress;1"]
                      .createInstance(Ci.nsIMsgProgress);
-    if (progress) {
+    if (progress && progressListener)
       progress.registerListener(progressListener);
-    }
-    gMsgCompose.RegisterStateListener(stateListener);
+    if (stateListener)
+      gMsgCompose.RegisterStateListener(stateListener);
 
     try {
       gMsgCompose.SendMsg(deliverType, identity, "", null, progress);

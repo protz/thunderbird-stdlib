@@ -43,7 +43,7 @@
 var EXPORTED_SYMBOLS = [
   'quoteMsgHdr', 'citeString',
   'htmlToPlainText', 'simpleWrap',
-  'plainTextToHtml',
+  'plainTextToHtml', 'replyAllParams',
 ]
 
 const Ci = Components.interfaces;
@@ -66,6 +66,9 @@ Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
 Cu.import("resource://"+extPath+"/log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
+
+const gHeaderParser = Cc["@mozilla.org/messenger/headerparser;1"]
+                      .getService(Ci.nsIMsgHeaderParser);
 
 /**
  * Use the mailnews component to stream a message, and process it in a way
@@ -278,4 +281,67 @@ function plainTextToHtml(txt) {
     level = newLevel;
   }
   return newLines.join("\n");
+}
+
+function parse(aMimeLine) {
+  let emails = {};
+  let fullNames = {};
+  let names = {};
+  let numAddresses = gHeaderParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
+  return [names.value, emails.value];
+}
+
+/**
+ * Analyze a message header, and then return all the compose parameters for the
+ * reply-all case.
+ * @param {nsIIdentity} The identity you've picked for the reply.
+ * @param {nsIMsgDbHdr} The message header.
+ * @return {{ to: [[name, email]], cc: [[name, email]], bcc: [[name, email]]}}
+ *  The results
+ */
+function replyAllParams(aIdentity, aMsgHdr) {
+  // Do the whole shebang to find out who to send to...
+  let [author, authorEmailAddress] = parse(aMsgHdr.mime2DecodedAuthor);
+  let [recipients, recipientsEmailAddresses] = parse(aMsgHdr.mime2DecodedRecipients);
+  let [ccList, ccListEmailAddresses] = parse(aMsgHdr.ccList);
+  let [bccList, bccListEmailAddresses] = parse(aMsgHdr.bccList);
+  let identity = aIdentity;
+  let to = [], cc = [], bcc = [];
+
+  let isReplyToOwnMsg = false;
+  for each (let [i, identity] in Iterator(gIdentities)) {
+    // It happens that gIdentities.default is null!
+    if (!identity) {
+      Log.debug("This identity is null, pretty weird...");
+      continue;
+    }
+    let email = identity.email;
+    if (email == authorEmailAddress)
+      isReplyToOwnMsg = true;
+    if (recipientsEmailAddresses.some(function (x) x == email))
+      isReplyToOwnMsg = false;
+    if (ccListEmailAddresses.some(function (x) x == email))
+      isReplyToOwnMsg = false;
+  }
+
+  // Actually we are implementing the "Reply all" logic... that's better, no one
+  //  wants to really use reply anyway ;-)
+  if (isReplyToOwnMsg) {
+    to = [[r, recipientsEmailAddresses[i]]
+      for each ([i, r] in Iterator(recipients))];
+  } else {
+    to = [[author, authorEmailAddress]];
+  }
+  cc = [[cc, ccListEmailAddresses[i]]
+    for each ([i, cc] in Iterator(ccList))
+    if (ccListEmailAddresses[i] != identity.email)];
+  if (!isReplyToOwnMsg)
+    cc = cc.concat
+      ([[r, recipientsEmailAddresses[i]]
+        for each ([i, r] in Iterator(recipients))
+        if (recipientsEmailAddresses[i] != identity.email)]);
+  bcc = [[bcc, bccListEmailAddresses[i]]
+    for each ([i, bcc] in Iterator(bccList))];
+
+  return { to: to, cc: cc, bcc: bcc };
 }
