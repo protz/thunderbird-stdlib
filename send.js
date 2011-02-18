@@ -48,6 +48,7 @@ const Cu = Components.utils;
 const Cr = Components.results;
 
 Cu.import("resource://gre/modules/PluralForm.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
 Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
 
 const gHeaderParser = Cc["@mozilla.org/messenger/headerparser;1"]
@@ -88,6 +89,62 @@ function getArchiveFolderUriFor(identity, msgDate) {
   return folderUri;
 }
 
+function wrapBody(t) {
+  let r =
+    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"+
+    "<html>\n"+
+    "  <head>\n"+
+    "    <meta http-equiv=\"content-type\" content=\"text/html;\n"+
+    "      charset=ISO-8859-1\">\n"+
+    "  </head>\n"+
+    "  <body>"+
+    "    "+t+"\n"+
+    "  </body>\n"+
+    "</html>\n"
+  ;
+  return r;
+}
+
+/**
+ * This is our fake editor. We manipulate carefully the functions from
+ *  nsMsgCompose.cpp so that it just figures out we have an editor, but doesn't
+ *  try to interact with it.
+ * We'll probably try to improve this in the near future.
+ */
+function FakeEditor (aIframe) {
+  this.iframe = aIframe;
+}
+
+FakeEditor.prototype = {
+  getEmbeddedObjects: function _FakeEditor_getEmbeddedObjects () {
+    try {
+      let objects = Cc["@mozilla.org/supports-array;1"]
+                      .createInstance(Ci.nsISupportsArray);
+      for each (let [, o] in Iterator(this.iframe.contentDocument.getElementsByTagName("img")))
+        objects.AppendElement(o, false);
+      return objects;
+    } catch (e) {
+      Log.error(e);
+      dumpCallStack(e);
+    }
+  },
+
+  outputToString: function _FakeEditor_outputToString (formatType, flags) {
+    let html = this.iframe.contentDocument.body.innerHTML;
+    switch (formatType) {
+      case "text/plain":
+        return htmlToPlainText(html);
+
+      case "text/html":
+        return wrapBody(html);
+
+      default:
+        Log.error("Unexpected formatType", formatType, flags);
+    }
+  },
+
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIEditor, Ci.nsIEditorMailSupport]),
+}
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to
 //  nsMsgCopySendListener (nsMsgCompose.cpp). nsMsgCopySendListener holds a
@@ -133,10 +190,9 @@ let gMsgCompose;
  * @param sendingParameters.compType See Ci.nsIMsgCompType. We use this to
  *  determine what kind of headers we should set (Reply-To, References...).
  *
- * @param aNode The DOM node that holds the editing session. Right now, it's
- *  kinda useless if it's only plaintext, but it's relevant for the HTML
- *  composition (because nsMsgSend queries the original DOM node to find out
- *  about inline images).
+ * @param aBody A visitor pattern, again. Calls x.editor(iframe) if this is a
+ *  fully-fledged html editing session, or calls x.plainText(body) if this is
+ *  just a simple plaintext mail.
  *
  * @param listeners
  * @param listeners.progressListener That one monitors the progress of long
@@ -157,7 +213,7 @@ let gMsgCompose;
  */
 function sendMessage(params,
     { deliverType, compType },
-    aNode,
+    aBody,
     { progressListener, sendListener, stateListener },
     options) {
 
@@ -178,13 +234,16 @@ function sendMessage(params,
   if ("bcc" in params)
     fields.bcc = params.bcc;
   fields.subject = subject;
-  if ("returnReceipt" in params)
-    fields.returnReceipt = params.returnReceipt;
-  if ("receiptType" in params)
-    fields.receiptHeaderType = params.receiptType;
-  if ("requestDsn" in params)
-    fields.DSN = params.requestDsn;
-
+  fields.returnReceipt = ("returnReceipt" in params)
+    ? params.returnReceipt
+    : identity.requestReturnReceipt;
+  fields.receiptHeaderType = ("receiptType" in params)
+    ? params.receiptType
+    : identity.receiptHeaderType;
+  fields.DSN = ("requestDsn" in params)
+    ? params.requestDsn
+    : identity.requestDSN;
+  
   let references = [];
   switch (compType) {
     case mCompType.New:
@@ -212,32 +271,6 @@ function sendMessage(params,
 
   // TODO:
   // - fields.addAttachment (when attachments taken into account)
-
-  // See suite/mailnews/compose/MsgComposeCommands.js#1783
-  // We're explicitly forcing plaintext here. SendMsg is thought-out well enough
-  //  and checks whether we're composing html. If we're not, it uses either the
-  //  contents of the nsPlainTextEditor::OutputToString if we have an editor, or
-  //  the original contents of the fields if we have no editor. That suits us
-  //  well.
-  // http://mxr.mozilla.org/comm-central/source/mailnews/compose/src/nsMsgCompose.cpp#1102
-  // 
-  // What we could do (better) is call msgCompose.InitEditor with a fake
-  //  plaintext editor that implements nsIMailEditorSupport and has an
-  //  OutputToString method.  We would also lift the requirement on
-  //  forcePlainText, and allow multipart/alternative, which would result in the
-  //  mozITXTToHTMLConv being run to convert *bold* to <b>bold</b> and so on.
-  // Please note that querying the editor for its contents is the responsibility
-  //  of nsMsgSend.
-  // http://mxr.mozilla.org/comm-central/source/mailnews/compose/src/nsMsgSend.cpp#1615
-  //
-  // See also nsMsgSend:620 for a vague explanation on how the editor's HTML
-  //  ends up being converted as text/plain, for the case where we would like to
-  //  offer HTML editing.
-  fields.useMultipartAlternative = false;
-  // We're in 2011 now, let's assume everyone knows how to read UTF-8
-  fields.bodyIsAsciiOnly = false;
-  fields.characterSet = "UTF-8";
-  fields.body = aNode.value+"\n"; // Doesn't work without the newline. Weird. IMAP stuff.
 
   // If we are to archive the conversation after sending, this means we also
   //  have to archive the sent message as well. The simple way to do it is to
@@ -284,8 +317,6 @@ function sendMessage(params,
   if (popOut) {
     // We set all the fields ourselves, force New so that the compose code
     //  doesn't try to figure out the parameters by itself.
-    // XXX maybe we should just use New everywhere since we're setting the
-    //  parameters ourselves anyway...
     fields.characterSet = "UTF-8";
     fields.forcePlainText = false;
     // If we don't do that the editor compose window will think that the >s that
@@ -302,29 +333,68 @@ function sendMessage(params,
     fields.body = plainTextToHtml(fields.body);
 
     params.format = Ci.nsIMsgCompFormat.HTML;
+    // XXX maybe we should just use New everywhere since we're setting the
+    //  parameters ourselves anyway...
     params.type = mCompType.New;
     msgComposeService.OpenComposeWindowWithParams(null, params);
     return true;
   } else {
-    fields.forcePlainText = true;
-    // So we should have something more elaborate than a simple textarea. The
-    //  reason is, we should be able to differentiate between user-inserted >'s
-    //  and quote-inserted >'s. (The standard Thunderbird plaintext editor does
-    //  it with a blue color). The user-inserted >'s want a space prepended so
-    //  that the MUA doesn't interpret them as quotation. Real quotations don't.
-    // This is kinda out of scope so we're leaving the issue non-fixed but this
-    //  is clearly a FIXME.
-    fields.body = simpleWrap(fields.body, 72);
-    params.format = Ci.nsIMsgCompFormat.PlainText;
+    aBody.match({
+      plainText: function(body) {
+        // This part initializes a nsIMsgCompose instance. This is useless, because
+        //  that component is supposed to talk to the "real" compose window, set the
+        //  encoding, set the composition mode... we're only doing that because we
+        //  can't send the message ourselves because of too many [noscript]s.
+        gMsgCompose = msgComposeService.initCompose(params);
+        // See suite/mailnews/compose/MsgComposeCommands.js#1783
+        // We're explicitly forcing plaintext here. SendMsg is thought-out well enough
+        //  and checks whether we're composing html. If we're not, it uses either the
+        //  contents of the nsPlainTextEditor::OutputToString if we have an editor, or
+        //  the original contents of the fields if we have no editor. That suits us
+        //  well.
+        // http://mxr.mozilla.org/comm-central/source/mailnews/compose/src/nsMsgCompose.cpp#1102
+        // 
+        // What we could do (better) is call msgCompose.InitEditor with a fake
+        //  plaintext editor that implements nsIMailEditorSupport and has an
+        //  OutputToString method.  We would also lift the requirement on
+        //  forcePlainText, and allow multipart/alternative, which would result in the
+        //  mozITXTToHTMLConv being run to convert *bold* to <b>bold</b> and so on.
+        // Please note that querying the editor for its contents is the responsibility
+        //  of nsMsgSend.
+        // http://mxr.mozilla.org/comm-central/source/mailnews/compose/src/nsMsgSend.cpp#1615
+        //
+        // See also nsMsgSend:620 for a vague explanation on how the editor's HTML
+        //  ends up being converted as text/plain, for the case where we would like to
+        //  offer HTML editing.
+        // We're in 2011 now, let's assume everyone knows how to read UTF-8
+        fields.bodyIsAsciiOnly = false;
+        fields.characterSet = "UTF-8";
+        fields.useMultipartAlternative = false;
+        // So we should have something more elaborate than a simple textarea. The
+        //  reason is, we should be able to differentiate between user-inserted >'s
+        //  and quote-inserted >'s. (The standard Thunderbird plaintext editor does
+        //  it with a blue color). The user-inserted >'s want a space prepended so
+        //  that the MUA doesn't interpret them as quotation. Real quotations don't.
+        // This is kinda out of scope so we're leaving the issue non-fixed but this
+        //  is clearly a FIXME.
+        fields.body = simpleWrap(fields.body, 72);
+        params.format = Ci.nsIMsgCompFormat.PlainText;
+        fields.forcePlainText = true;
+      },
 
-    // This part initializes a nsIMsgCompose instance. This is useless, because
-    //  that component is supposed to talk to the "real" compose window, set the
-    //  encoding, set the composition mode... we're only doing that because we
-    //  can't send the message ourselves because of too many [noscript]s.
-    if ("InitCompose" in msgComposeService) // comm-1.9.2
-      gMsgCompose = msgComposeService.InitCompose (null, params);
-    else // comm-central
-      gMsgCompose = msgComposeService.initCompose(params);
+      editor: function (iframe) {
+        gMsgCompose = msgComposeService.initCompose(
+          params,
+          iframe.contentWindow,
+          iframe.contentWindow.docshell
+        );
+        // Here we trust the parameters that have been set by the call to
+        // msgComposeService.InitCompose above, and we just assume the
+        // fakeEditor will be able to output HTML and plainText as needed...
+        let fakeEditor = new FakeEditor(iframe);
+        gMsgCompose.initEditor(fakeEditor, iframe.contentWindow);
+      },
+    });
 
     // We create a progress listener...
     var progress = Cc["@mozilla.org/messenger/progress;1"]

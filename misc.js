@@ -164,12 +164,12 @@ function escapeHtml(s) {
   // stolen from selectionsummaries.js (thanks davida!)
   return s.replace(/[<>&]/g, function(s) {
       switch (s) {
-          case "<": return "&lt;";
-          case ">": return "&gt;";
-          case "&": return "&amp;";
-          default: throw Error("Unexpected match");
-          }
+        case "<": return "&lt;";
+        case ">": return "&gt;";
+        case "&": return "&amp;";
+        default: throw Error("Unexpected match");
       }
+    }
   );
 }
 

@@ -301,7 +301,7 @@ function parse(aMimeLine) {
  */
 function replyAllParams(aIdentity, aMsgHdr) {
   // Do the whole shebang to find out who to send to...
-  let [author, authorEmailAddress] = parse(aMsgHdr.mime2DecodedAuthor);
+  let [[author, authorEmailAddress]] = parse(aMsgHdr.mime2DecodedAuthor);
   let [recipients, recipientsEmailAddresses] = parse(aMsgHdr.mime2DecodedRecipients);
   let [ccList, ccListEmailAddresses] = parse(aMsgHdr.ccList);
   let [bccList, bccListEmailAddresses] = parse(aMsgHdr.bccList);
