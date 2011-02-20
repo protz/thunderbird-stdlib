@@ -130,10 +130,11 @@ FakeEditor.prototype = {
   },
 
   outputToString: function _FakeEditor_outputToString (formatType, flags) {
+    Log.debug("Returning mail body for", formatType);
     let html = this.iframe.contentDocument.body.innerHTML;
     switch (formatType) {
       case "text/plain":
-        return htmlToPlainText(html);
+        return htmlToPlainText(html)+"\n";
 
       case "text/html":
         return wrapBody(html);
@@ -377,12 +378,15 @@ function sendMessage(params,
         //  that the MUA doesn't interpret them as quotation. Real quotations don't.
         // This is kinda out of scope so we're leaving the issue non-fixed but this
         //  is clearly a FIXME.
-        fields.body = simpleWrap(fields.body, 72);
+        fields.body = simpleWrap(fields.body, 72)+"\n";
         params.format = Ci.nsIMsgCompFormat.PlainText;
         fields.forcePlainText = true;
       },
 
       editor: function (iframe) {
+        fields.bodyIsAsciiOnly = false;
+        fields.characterSet = "UTF-8";
+        fields.useMultipartAlternative = true;
         gMsgCompose = msgComposeService.initCompose(
           params,
           iframe.contentWindow,
