@@ -182,6 +182,8 @@ let gMsgCompose;
  * @param composeParameters.cc (optional) Same remark.
  * @param composeParameters.bcc (optional) Same remark.
  * @param composeParameters.subject The subject, no restrictions on that one.
+ * @param composeParameters.attachments A list of nsIMsgAttachment objects
+ *  (optional)
  * @param composeParameters.returnReceipt (optional)
  * @param composeParameters.receiptType (optional)
  * @param composeParameters.requestDsn (optional)
@@ -222,6 +224,7 @@ function sendMessage(params,
   let archive = options && options.archive;
 
   let { msgHdr, identity, to, subject } = params;
+  let attachments = params.attachments || [];
 
   // Here is the part where we do all the stuff related to filling proper
   //  headers, adding references, making sure all the composition fields are
@@ -269,9 +272,7 @@ function sendMessage(params,
   }
   references = ["<"+x+">" for each ([, x] in Iterator(references))];
   fields.references = references.join(" ");
-
-  // TODO:
-  // - fields.addAttachment (when attachments taken into account)
+  [fields.addAttachment(x) for each ([, x] in Iterator(attachments))];
 
   // If we are to archive the conversation after sending, this means we also
   //  have to archive the sent message as well. The simple way to do it is to
