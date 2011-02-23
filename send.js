@@ -130,10 +130,11 @@ FakeEditor.prototype = {
   },
 
   outputToString: function _FakeEditor_outputToString (formatType, flags) {
+    Log.debug("Returning mail body for", formatType);
     let html = this.iframe.contentDocument.body.innerHTML;
     switch (formatType) {
       case "text/plain":
-        return htmlToPlainText(html);
+        return htmlToPlainText(html)+"\n";
 
       case "text/html":
         return wrapBody(html);
@@ -181,6 +182,8 @@ let gMsgCompose;
  * @param composeParameters.cc (optional) Same remark.
  * @param composeParameters.bcc (optional) Same remark.
  * @param composeParameters.subject The subject, no restrictions on that one.
+ * @param composeParameters.attachments A list of nsIMsgAttachment objects
+ *  (optional)
  * @param composeParameters.returnReceipt (optional)
  * @param composeParameters.receiptType (optional)
  * @param composeParameters.requestDsn (optional)
@@ -221,6 +224,7 @@ function sendMessage(params,
   let archive = options && options.archive;
 
   let { msgHdr, identity, to, subject } = params;
+  let attachments = params.attachments || [];
 
   // Here is the part where we do all the stuff related to filling proper
   //  headers, adding references, making sure all the composition fields are
@@ -268,9 +272,7 @@ function sendMessage(params,
   }
   references = ["<"+x+">" for each ([, x] in Iterator(references))];
   fields.references = references.join(" ");
-
-  // TODO:
-  // - fields.addAttachment (when attachments taken into account)
+  [fields.addAttachment(x) for each ([, x] in Iterator(attachments))];
 
   // If we are to archive the conversation after sending, this means we also
   //  have to archive the sent message as well. The simple way to do it is to
@@ -330,7 +332,15 @@ function sendMessage(params,
     //  thing: if we were to do the right thing (tm) we would unparse the quoted
     //  lines and push them as single lines in the HTML, with no <br>s in the
     //  middle, but well... I guess this is okay enough.
-    fields.body = plainTextToHtml(fields.body);
+    aBody.match({
+      plainText: function (body) {
+        fields.body = plainTextToHtml(body);
+      },
+      editor: function (iframe) {
+        let html = iframe.contentDocument.body.innerHTML;
+        fields.body = html;
+      },
+    });
 
     params.format = Ci.nsIMsgCompFormat.HTML;
     // XXX maybe we should just use New everywhere since we're setting the
@@ -341,31 +351,6 @@ function sendMessage(params,
   } else {
     aBody.match({
       plainText: function(body) {
-        // This part initializes a nsIMsgCompose instance. This is useless, because
-        //  that component is supposed to talk to the "real" compose window, set the
-        //  encoding, set the composition mode... we're only doing that because we
-        //  can't send the message ourselves because of too many [noscript]s.
-        gMsgCompose = msgComposeService.initCompose(params);
-        // See suite/mailnews/compose/MsgComposeCommands.js#1783
-        // We're explicitly forcing plaintext here. SendMsg is thought-out well enough
-        //  and checks whether we're composing html. If we're not, it uses either the
-        //  contents of the nsPlainTextEditor::OutputToString if we have an editor, or
-        //  the original contents of the fields if we have no editor. That suits us
-        //  well.
-        // http://mxr.mozilla.org/comm-central/source/mailnews/compose/src/nsMsgCompose.cpp#1102
-        // 
-        // What we could do (better) is call msgCompose.InitEditor with a fake
-        //  plaintext editor that implements nsIMailEditorSupport and has an
-        //  OutputToString method.  We would also lift the requirement on
-        //  forcePlainText, and allow multipart/alternative, which would result in the
-        //  mozITXTToHTMLConv being run to convert *bold* to <b>bold</b> and so on.
-        // Please note that querying the editor for its contents is the responsibility
-        //  of nsMsgSend.
-        // http://mxr.mozilla.org/comm-central/source/mailnews/compose/src/nsMsgSend.cpp#1615
-        //
-        // See also nsMsgSend:620 for a vague explanation on how the editor's HTML
-        //  ends up being converted as text/plain, for the case where we would like to
-        //  offer HTML editing.
         // We're in 2011 now, let's assume everyone knows how to read UTF-8
         fields.bodyIsAsciiOnly = false;
         fields.characterSet = "UTF-8";
@@ -377,12 +362,21 @@ function sendMessage(params,
         //  that the MUA doesn't interpret them as quotation. Real quotations don't.
         // This is kinda out of scope so we're leaving the issue non-fixed but this
         //  is clearly a FIXME.
-        fields.body = simpleWrap(fields.body, 72);
         params.format = Ci.nsIMsgCompFormat.PlainText;
         fields.forcePlainText = true;
+        fields.body = simpleWrap(body, 72)+"\n";
+
+        // This part initializes a nsIMsgCompose instance. This is useless, because
+        //  that component is supposed to talk to the "real" compose window, set the
+        //  encoding, set the composition mode... we're only doing that because we
+        //  can't send the message ourselves because of too many [noscript]s.
+        gMsgCompose = msgComposeService.initCompose(params);
       },
 
       editor: function (iframe) {
+        fields.bodyIsAsciiOnly = false;
+        fields.characterSet = "UTF-8";
+        fields.useMultipartAlternative = true;
         gMsgCompose = msgComposeService.initCompose(
           params,
           iframe.contentWindow,
