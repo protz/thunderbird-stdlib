@@ -117,9 +117,8 @@ function msgHdrIsSent(msgHdr)
  * @param {nsIMsgDbHdr} msgHdr The message header to examine
  * @return {bool}
  */
-function msgHdrIsArchive(msgHdr) {
-  return msgHdr.folder.getFlag(nsMsgFolderFlags_Archive);
-}
+function msgHdrIsArchive(msgHdr)
+  msgHdr.folder.getFlag(nsMsgFolderFlags_Archive);
 
 /**
  * Get a string containing the body of a messsage.
@@ -261,7 +260,7 @@ function msgHdrsArchive(msgHdrs) {
    * */
   let mail3PaneWindow = getMail3Pane();
   let batchMover = new mail3PaneWindow.BatchMessageMover();
-  batchMover.archiveMessages(msgHdrs);
+  batchMover.archiveMessages(msgHdrs.filter(function (x) !msgHdrIsArchive(x)));
 }
 
 /**
