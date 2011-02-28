@@ -174,6 +174,8 @@ let gMsgCompose;
  * This version only does plaintext composition but I hope to enhance it with
  *  both HTML and plaintext in the future.
  * @param composeParameters
+ * @param composeParameters.urls {Array} A list of message URLs that are to be
+ *  used for references.
  * @param composeParameters.identity The identity the user picked to send the
  *  message
  * @param composeParameters.to The recipients. This is a comma-separated list of
@@ -223,7 +225,7 @@ function sendMessage(params,
   let popOut = options && options.popOut;
   let archive = options && options.archive;
 
-  let { msgHdr, identity, to, subject } = params;
+  let { urls, identity, to, subject } = params;
   let attachments = params.attachments || [];
 
   // Here is the part where we do all the stuff related to filling proper
@@ -259,16 +261,29 @@ function sendMessage(params,
     case mCompType.ReplyToGroup:
     case mCompType.ReplyToSenderAndGroup:
     case mCompType.ReplyWithTemplate:
-    case mCompType.ReplyToList:
+    case mCompType.ReplyToList: {
+      Log.assert(urls.length == 1, "Can't reply to more than one message at a time");
+      let msgHdr = msgUriToMsgHdr(urls[0]);
       references = [msgHdr.getStringReference(i)
         for each (i in range(0, msgHdr.numReferences))];
       references.push(msgHdr.messageId);
       break;
+    }
 
-    case mCompType.ForwardAsAttachment:
-    case mCompType.ForwardInline:
+    case mCompType.ForwardAsAttachment: {
+      for each (let [, url] in Iterator(urls)) {
+        let msgHdr = msgUriToMsgHdr(url);
+        references.push(msgHdr.messageId);
+      }
+      break;
+    }
+
+    case mCompType.ForwardInline: {
+      Log.assert(urls.length == 1, "Can't forward inline more than one message at a time");
+      let msgHdr = msgUriToMsgHdr(urls[0]);
       references.push(msgHdr.messageId);
       break;
+    }
   }
   references = ["<"+x+">" for each ([, x] in Iterator(references))];
   fields.references = references.join(" ");

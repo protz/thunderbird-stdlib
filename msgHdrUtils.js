@@ -43,7 +43,8 @@
 
 var EXPORTED_SYMBOLS = [
   // Low-level XPCOM boring stuff
-  'msgHdrToMessageBody', 'msgHdrToNeckoURL', 'msgHdrGetTags', 'msgUriToMsgHdr', 'msgHdrGetUri',
+  'msgHdrToMessageBody', 'msgHdrToNeckoURL', 'msgHdrGetTags', 'msgUriToMsgHdr',
+  'msgHdrGetUri',
   // Quickly identify a message
   'msgHdrIsDraft', 'msgHdrIsSent', 'msgHdrIsArchive', 'msgHdrIsInbox',
   'msgHdrIsRss', 'msgHdrIsNntp', 'msgHdrIsJunk',
