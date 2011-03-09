@@ -261,7 +261,10 @@ function msgHdrsArchive(msgHdrs) {
    * */
   let mail3PaneWindow = getMail3Pane();
   let batchMover = new mail3PaneWindow.BatchMessageMover();
-  batchMover.archiveMessages(msgHdrs.filter(function (x) !msgHdrIsArchive(x)));
+  batchMover.archiveMessages(msgHdrs.filter(
+    function (x)
+      !msgHdrIsArchive(x) && getMail3Pane().getIdentityForHeader(x).archiveEnabled
+  ));
 }
 
 /**
