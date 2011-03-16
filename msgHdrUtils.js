@@ -85,8 +85,13 @@ function msgHdrGetUri (aMsg)
  * @return {nsIMsgDbHdr}
  */
 function msgUriToMsgHdr(aUri) {
-  let messageService = gMessenger.messageServiceFromURI(aUri);
-  return messageService.messageURIToMsgHdr(aUri);
+  try {
+    let messageService = gMessenger.messageServiceFromURI(aUri);
+    return messageService.messageURIToMsgHdr(aUri);
+  } catch (e) {
+    dump("Unable to get "+aUri+" — returning null instead");
+    return null;
+  }
 }
 
 /**
