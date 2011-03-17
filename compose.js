@@ -60,6 +60,7 @@ let extPath = Cc["@mozilla.org/preferences-service;1"]
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
 Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource:///modules/gloda/mimemsg.js"); // For MsgHdrToMimeMessage
 
 Cu.import("resource://"+extPath+"/stdlib/misc.js");
 Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
@@ -296,10 +297,11 @@ function parse(aMimeLine) {
  * reply-all case.
  * @param {nsIIdentity} The identity you've picked for the reply.
  * @param {nsIMsgDbHdr} The message header.
- * @return {{ to: [[name, email]], cc: [[name, email]], bcc: [[name, email]]}}
- *  The results
+ * @param {k} The function to call once we've determined all parameters. Take an
+ *  argument like
+ *  {{ to: [[name, email]], cc: [[name, email]], bcc: [[name, email]]}}
  */
-function replyAllParams(aIdentity, aMsgHdr) {
+function replyAllParams(aIdentity, aMsgHdr, k) {
   // Do the whole shebang to find out who to send to...
   let [[author], [authorEmailAddress]] = parse(aMsgHdr.mime2DecodedAuthor);
   let [recipients, recipientsEmailAddresses] = parse(aMsgHdr.mime2DecodedRecipients);
@@ -343,5 +345,27 @@ function replyAllParams(aIdentity, aMsgHdr) {
   bcc = [[bcc, bccListEmailAddresses[i]]
     for each ([i, bcc] in Iterator(bccList))];
 
-  return { to: to, cc: cc, bcc: bcc };
+  // Do we have a Reply-To header?
+  MsgHdrToMimeMessage(aMsgHdr, null, function (aMsgHdr, aMimeMsg) {
+    if ("reply-to" in aMimeMsg.headers) {
+      let [[name], [email]] = parse(aMimeMsg.headers["reply-to"]);
+      if (email) {
+        cc = cc.concat([to[0]]); // move the to in cc
+        to = [[name, email]];
+        let hashMap = {};
+        hashMap[email] = null;
+        cc = cc.filter(function ([name, email])
+          let (r = (email in hashMap))
+          (hashMap[email] = null,
+          !r)
+        );
+        bcc = bcc.filter(function ([name, email])
+          let (r = (email in hashMap))
+          (hashMap[email] = null,
+          !r)
+        );
+      }
+    }
+    k({ to: to, cc: cc, bcc: bcc });
+  }, true); // do download
 }
