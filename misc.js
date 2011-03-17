@@ -130,7 +130,10 @@ let gIdentities = {};
  */
 function fillIdentities() {
   for each (let id in fixIterator(msgAccountManager.allIdentities, Ci.nsIMsgIdentity)) {
-    gIdentities[id.email.toLowerCase()] = id;
+    // We're only interested in identities that have a real email.
+    if (id.email) {
+      gIdentities[id.email.toLowerCase()] = id;
+    }
   }
   gIdentities["default"] = msgAccountManager.defaultAccount.defaultIdentity;
 }
