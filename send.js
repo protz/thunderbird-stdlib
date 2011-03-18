@@ -165,6 +165,14 @@ FakeEditor.prototype = {
 // That's way too implausible, so I'll just assume this doesn't happen!
 let gMsgCompose;
 
+function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
+  if ("InitCompose" in aMsgComposeService) {
+    return aMsgComposeService.InitCompose(aWindow, aParams);
+  } else {
+    return aMsgComposeService.initCompose(aParams, aWindow, aDocShell);
+  }
+}
+
 /**
  * This is our monstrous Javascript function for sending a message. It hides all
  *  the atrocities of nsMsgCompose.cpp and nsMsgSend.cpp for you, and it
@@ -385,14 +393,15 @@ function sendMessage(params,
         //  that component is supposed to talk to the "real" compose window, set the
         //  encoding, set the composition mode... we're only doing that because we
         //  can't send the message ourselves because of too many [noscript]s.
-        gMsgCompose = msgComposeService.initCompose(params);
+        gMsgCompose = initCompose(msgComposeService, params);
       },
 
       editor: function (iframe) {
         fields.bodyIsAsciiOnly = false;
         fields.characterSet = "UTF-8";
         fields.useMultipartAlternative = true;
-        gMsgCompose = msgComposeService.initCompose(
+        gMsgCompose = initCompose(
+          msgComposeService,
           params,
           iframe.contentWindow,
           iframe.contentWindow.docshell
