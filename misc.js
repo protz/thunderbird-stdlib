@@ -50,8 +50,8 @@ var EXPORTED_SYMBOLS = [
   'NS_FAILED', 'NS_SUCCEEDED',
   // Various formatting helpers
   'dateAsInMessageList', 'escapeHtml', 'parseMimeLine',
-	// Useful for web content
-	'encodeUrlParameters', 'decodeUrlParameters',
+  // Useful for web content
+  'encodeUrlParameters', 'decodeUrlParameters',
 ]
 
 const Ci = Components.interfaces;
@@ -202,11 +202,11 @@ function parseMimeLine (aMimeLine) {
  * @return param1=val1&param2=val2 etc.
  */
 function encodeUrlParameters(aObj) {
-	let kv = [];
-	for each (let [k, v] in Iterator(aObj)) {
-		kv.push(k+"="+encodeURIComponent(v));
-	}
-	return kv.join("&");
+  let kv = [];
+  for each (let [k, v] in Iterator(aObj)) {
+    kv.push(k+"="+encodeURIComponent(v));
+  }
+  return kv.join("&");
 }
 
 /**
@@ -216,16 +216,16 @@ function encodeUrlParameters(aObj) {
  * @return An object that holds the decoded data
  */
 function decodeUrlParameters(aStr) {
-	let params = {};
-	let i = aStr.indexOf("?");
-	if (i >= 0) {
-		let query = aStr.substring(i+1, aStr.length);
-		let keyVals = query.split("&");
-		for each (let [, keyVal] in Iterator(keyVals)) {
-			let [key, val] = keyVal.split("=");
-			val = decodeURIComponent(val);
-			params[key] = val;
-		}
-	}
-	return params;
+  let params = {};
+  let i = aStr.indexOf("?");
+  if (i >= 0) {
+    let query = aStr.substring(i+1, aStr.length);
+    let keyVals = query.split("&");
+    for each (let [, keyVal] in Iterator(keyVals)) {
+      let [key, val] = keyVal.split("=");
+      val = decodeURIComponent(val);
+      params[key] = val;
+    }
+  }
+  return params;
 }
