@@ -181,9 +181,11 @@ function escapeHtml(s) {
 /**
  * Wraps the low-level header parser stuff.
  * @param {String} aMimeLine a line that looks like "John &lt;john@cheese.com&gt;, Jane &lt;jane@wine.com&gt;"
+ * @param {Boolean} aDontFix (optional) Default to false. Shall we return an
+ *  empty array in case aMimeLine is empty?
  * @return {Array} a list of { email, name } objects
  */
-function parseMimeLine (aMimeLine) {
+function parseMimeLine (aMimeLine, aDontFix) {
   let emails = {};
   let fullNames = {};
   let names = {};
@@ -191,6 +193,8 @@ function parseMimeLine (aMimeLine) {
   if (numAddresses)
     return [{ email: emails.value[i], name: names.value[i], fullName: fullNames.value[i] }
       for each (i in range(0, numAddresses))];
+  else if (aDontFix)
+    return [];
   else
     return [{ email: "", name: "-", fullName: "-" }];
 }
