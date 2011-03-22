@@ -50,6 +50,8 @@ var EXPORTED_SYMBOLS = [
   'NS_FAILED', 'NS_SUCCEEDED',
   // Various formatting helpers
   'dateAsInMessageList', 'escapeHtml', 'parseMimeLine',
+	// Useful for web content
+	'encodeUrlParameters', 'decodeUrlParameters',
 ]
 
 const Ci = Components.interfaces;
@@ -191,4 +193,39 @@ function parseMimeLine (aMimeLine) {
       for each (i in range(0, numAddresses))];
   else
     return [{ email: "", name: "-", fullName: "-" }];
+}
+
+/**
+ * Takes an object whose keys are the parameter names, whose values are strings
+ * that are to be encoded in the url.
+ * @param aObj
+ * @return param1=val1&param2=val2 etc.
+ */
+function encodeUrlParameters(aObj) {
+	let kv = [];
+	for each (let [k, v] in Iterator(aObj)) {
+		kv.push(k+"="+encodeURIComponent(v));
+	}
+	return kv.join("&");
+}
+
+/**
+ * Takes the <b>entire</b> query string and returns an object whose keys are the
+ * parameter names and values are corresponding values.
+ * @param aStr The entire query string
+ * @return An object that holds the decoded data
+ */
+function decodeUrlParameters(aStr) {
+	let params = {};
+	let i = aStr.indexOf("?");
+	if (i >= 0) {
+		let query = aStr.substring(i+1, aStr.length);
+		let keyVals = query.split("&");
+		for each (let [, keyVal] in Iterator(keyVals)) {
+			let [key, val] = keyVal.split("=");
+			val = decodeURIComponent(val);
+			params[key] = val;
+		}
+	}
+	return params;
 }
