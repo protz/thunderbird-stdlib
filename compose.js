@@ -345,6 +345,22 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   bcc = [[bcc, bccListEmailAddresses[i]]
     for each ([i, bcc] in Iterator(bccList))];
 
+  let finish = function (to, cc, bcc) {
+    let hashMap = {};
+    hashMap[to[0][1]] = null;
+    cc = cc.filter(function ([name, email])
+      let (r = (email in hashMap))
+      (hashMap[email] = null,
+      !r)
+    );
+    bcc = bcc.filter(function ([name, email])
+      let (r = (email in hashMap))
+      (hashMap[email] = null,
+      !r)
+    );
+    k({ to: to, cc: cc, bcc: bcc });
+  }
+
   // Do we have a Reply-To header?
   MsgHdrToMimeMessage(aMsgHdr, null, function (aMsgHdr, aMimeMsg) {
     if ("reply-to" in aMimeMsg.headers) {
@@ -352,20 +368,8 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
       if (email) {
         cc = cc.concat([to[0]]); // move the to in cc
         to = [[name, email]];
-        let hashMap = {};
-        hashMap[email] = null;
-        cc = cc.filter(function ([name, email])
-          let (r = (email in hashMap))
-          (hashMap[email] = null,
-          !r)
-        );
-        bcc = bcc.filter(function ([name, email])
-          let (r = (email in hashMap))
-          (hashMap[email] = null,
-          !r)
-        );
       }
     }
-    k({ to: to, cc: cc, bcc: bcc });
+    finish(to, cc, bcc);
   }, true); // do download
 }
