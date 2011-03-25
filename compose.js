@@ -83,6 +83,13 @@ const gHeaderParser = Cc["@mozilla.org/messenger/headerparser;1"]
  */
 function quoteMsgHdr(aMsgHdr, k) {
   let chunks = [];
+  // Everyone knows that nsICharsetConverterManager and nsIUnicodeDecoder
+  //  are not to be used from scriptable code, right? And the error you'll
+  //  get if you try to do so is really meaningful, and that you'll have no
+  //  trouble figuring out where the error comes from...
+  let unicodeConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                         .createInstance(Ci.nsIScriptableUnicodeConverter);
+  unicodeConverter.charset = "UTF-8";
   let listener = {
     /**@ignore*/
     setMimeHeaders: function () {
@@ -105,13 +112,6 @@ function quoteMsgHdr(aMsgHdr, k) {
       let data = NetUtil.readInputStreamToString(aStream, aCount);
       // Now each character of the string is actually to be understood as a byte
       //  of a UTF-8 string.
-      // Everyone knows that nsICharsetConverterManager and nsIUnicodeDecoder
-      //  are not to be used from scriptable code, right? And the error you'll
-      //  get if you try to do so is really meaningful, and that you'll have no
-      //  trouble figuring out where the error comes from...
-      let unicodeConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                             .createInstance(Ci.nsIScriptableUnicodeConverter);
-      unicodeConverter.charset = "UTF-8";
       // So charCodeAt is what we want here...
       let array = [];
       for (let i = 0; i < data.length; ++i)
