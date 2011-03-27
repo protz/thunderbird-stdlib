@@ -44,7 +44,7 @@
 var EXPORTED_SYMBOLS = [
   // Low-level XPCOM boring stuff
   'msgHdrToMessageBody', 'msgHdrToNeckoURL', 'msgHdrGetTags', 'msgUriToMsgHdr',
-  'msgHdrGetUri',
+  'msgHdrGetUri', 'msgHdrFromNeckoUrl',
   // Quickly identify a message
   'msgHdrIsDraft', 'msgHdrIsSent', 'msgHdrIsArchive', 'msgHdrIsInbox',
   'msgHdrIsRss', 'msgHdrIsNntp', 'msgHdrIsJunk',
@@ -124,7 +124,15 @@ function msgHdrIsSent(msgHdr)
  * @return {bool}
  */
 function msgHdrIsArchive(msgHdr)
-  msgHdr.folder.getFlag(nsMsgFolderFlags_Archive);
+  msgHdr.folder.getFlag(nsMsgFolderFlags_Archive)
+
+/**
+ * Get a nsIMsgDbHdr from a Necko URL.
+ * @param {String} The URL
+ * @return {nsIMsgDbHdr} The message header.
+ */
+function msgHdrFromNeckoUrl(aUrl)
+  aUrl.QueryInterface(Ci.nsIMsgMessageUrl).messageHeader
 
 /**
  * Get a string containing the body of a messsage.
