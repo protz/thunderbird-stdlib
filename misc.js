@@ -142,7 +142,7 @@ let gIdentities = {};
  *  list?
  */
 function fillIdentities(aSkipNntp) {
-  for each (let account in fixIterator(MailServices.accounts, Ci.nsIMsgAccount)) {
+  for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
     let server = account.incomingServer;
     if (aSkipNntp && (!server || server.type != "pop3" && server.type != "imap"))
       continue;
