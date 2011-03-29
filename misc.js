@@ -54,17 +54,26 @@ var EXPORTED_SYMBOLS = [
   'encodeUrlParameters', 'decodeUrlParameters',
 ]
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
 
-const i18nDateFormatter = Cc["@mozilla.org/intl/scriptabledateformat;1"]
-                            .createInstance(Ci.nsIScriptableDateFormat);
-const headerParser = Cc["@mozilla.org/messenger/headerparser;1"]
-                       .getService(Ci.nsIMsgHeaderParser);
-const msgAccountManager = Cc["@mozilla.org/messenger/account-manager;1"]
-                             .getService(Ci.nsIMsgAccountManager);
+let MailServices = {};
+try {
+  Cu.import("resource:///modules/mailServices.js");
+} catch(ignore) {
+  // backwards compatability for pre mailServices code, may not be necessary
+  Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
+
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "i18nDateFormatter",
+                                     "@mozilla.org/intl/scriptabledateformat;1",
+                                     "nsIScriptableDateFormat");
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "headerParser",
+                                     "@mozilla.org/messenger/headerparser;1",
+                                     "nsIMsgHeaderParser");
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "accounts",
+                                     "@mozilla.org/messenger/account-manager;1",
+                                     "nsIMsgAccountManager");
+}
 
 /**
  * Low-level XPCOM-style macro. You might need this for the composition and
@@ -131,13 +140,13 @@ let gIdentities = {};
  *  non-null.
  */
 function fillIdentities() {
-  for each (let id in fixIterator(msgAccountManager.allIdentities, Ci.nsIMsgIdentity)) {
+  for each (let id in fixIterator(MailServices.accounts.allIdentities, Ci.nsIMsgIdentity)) {
     // We're only interested in identities that have a real email.
     if (id.email) {
       gIdentities[id.email.toLowerCase()] = id;
     }
   }
-  gIdentities["default"] = msgAccountManager.defaultAccount.defaultIdentity;
+  gIdentities["default"] = MailServices.accounts.defaultAccount.defaultIdentity;
 }
 
 /**
@@ -152,7 +161,7 @@ function dateAsInMessageList(aDate) {
     ? Ci.nsIScriptableDateFormat.dateFormatNone
     : Ci.nsIScriptableDateFormat.dateFormatShort;
   // That is an ugly XPCOM call!
-  return i18nDateFormatter.FormatDateTime(
+  return MailServices.i18nDateFormatter.FormatDateTime(
     "", format, Ci.nsIScriptableDateFormat.timeFormatNoSeconds,
     aDate.getFullYear(), aDate.getMonth() + 1, aDate.getDate(),
     aDate.getHours(), aDate.getMinutes(), aDate.getSeconds());
@@ -189,7 +198,10 @@ function parseMimeLine (aMimeLine, aDontFix) {
   let emails = {};
   let fullNames = {};
   let names = {};
-  let numAddresses = headerParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
+  let numAddresses = MailServices.headerParser.parseHeadersWithArray(aMimeLine,
+                                                                     emails,
+                                                                     names,
+                                                                     fullNames);
   if (numAddresses)
     return [{ email: emails.value[i], name: names.value[i], fullName: fullNames.value[i] }
       for each (i in range(0, numAddresses))];

@@ -54,10 +54,7 @@ var EXPORTED_SYMBOLS = [
   'getMail3Pane',
 ]
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
+  const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 // from mailnews/base/public/nsMsgFolderFlags.idl
 const nsMsgFolderFlags_SentMail = 0x00000200;
@@ -65,11 +62,22 @@ const nsMsgFolderFlags_Drafts   = 0x00000400;
 const nsMsgFolderFlags_Archive  = 0x00004000;
 const nsMsgFolderFlags_Inbox    = 0x00001000;
 
-const gMessenger = Cc["@mozilla.org/messenger;1"]
-                   .createInstance(Ci.nsIMessenger);
-const gMsgTagService = Cc["@mozilla.org/messenger/tagservice;1"]
-                       .getService(Ci.nsIMsgTagService);
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
 
+let MailServices = {};
+try {
+  Cu.import("resource:///modules/mailServices.js");
+} catch(ignore) {
+  // backwards compatability for pre mailServices code, may not be necessary
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "tags",
+                                     "@mozilla.org/messenger/tagservice;1",
+                                     "nsIMsgTagService");
+}
+
+// Adding a messenger lazy getter to the MailServices even though it's not a service
+XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
+  return Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+});
 
 /**
  * Get a given message header's uri.
@@ -86,7 +94,7 @@ function msgHdrGetUri (aMsg)
  */
 function msgUriToMsgHdr(aUri) {
   try {
-    let messageService = gMessenger.messageServiceFromURI(aUri);
+    let messageService = MailServices.messenger.messageServiceFromURI(aUri);
     return messageService.messageURIToMsgHdr(aUri);
   } catch (e) {
     dump("Unable to get "+aUri+" — returning null instead");
@@ -156,7 +164,7 @@ function msgHdrToMessageBody(aMessageHeader, aStripHtml, aLength) {
 function msgHdrToNeckoURL(aMsgHdr) {
   let uri = aMsgHdr.folder.getUriForMsg(aMsgHdr);
   let neckoURL = {};
-  let msgService = gMessenger.messageServiceFromURI(uri);
+  let msgService = MailServices.messenger.messageServiceFromURI(uri);
   msgService.GetUrlForUri(uri, neckoURL, null);
   return neckoURL.value;
 }
@@ -178,7 +186,7 @@ function msgHdrGetTags (aMsgHdr) {
     keywordMap[keyword] = true;
   }
 
-  let tagArray = gMsgTagService.getAllTags({});
+  let tagArray = MailServices.tags.getAllTags({});
   let tags = [];
   for (let iTag = 0; iTag < tagArray.length; iTag++) {
     let tag = tagArray[iTag];

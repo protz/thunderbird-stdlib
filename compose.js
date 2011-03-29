@@ -46,10 +46,7 @@ var EXPORTED_SYMBOLS = [
   'plainTextToHtml', 'replyAllParams',
 ]
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
+const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 // __LOCATION__ is nsILocalFile
 let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
@@ -58,7 +55,7 @@ let extPath = Cc["@mozilla.org/preferences-service;1"]
               .getBranch(null)
               .getCharPref(ext+".path");
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource:///modules/gloda/mimemsg.js"); // For MsgHdrToMimeMessage
 
@@ -68,8 +65,15 @@ Cu.import("resource://"+extPath+"/log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
 
-const gHeaderParser = Cc["@mozilla.org/messenger/headerparser;1"]
-                      .getService(Ci.nsIMsgHeaderParser);
+let MailServices = {};
+try {
+  Cu.import("resource:///modules/mailServices.js");
+} catch(ignore) {
+  // backwards compatability for pre mailServices code, may not be necessary
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "headerParser",
+                                     "@mozilla.org/messenger/headerparser;1",
+                                     "nsIMsgHeaderParser");
+}
 
 /**
  * Use the mailnews component to stream a message, and process it in a way
@@ -288,7 +292,7 @@ function parse(aMimeLine) {
   let emails = {};
   let fullNames = {};
   let names = {};
-  let numAddresses = gHeaderParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
+  let numAddresses = MailServices.headerParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
   return [names.value, emails.value];
 }
 

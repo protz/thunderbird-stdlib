@@ -42,19 +42,25 @@
 
 var EXPORTED_SYMBOLS = ['sendMessage']
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
+const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 Cu.import("resource://gre/modules/PluralForm.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
 
-const gHeaderParser = Cc["@mozilla.org/messenger/headerparser;1"]
-                      .getService(Ci.nsIMsgHeaderParser);
-const msgComposeService = Cc["@mozilla.org/messengercompose;1"]
-                          .getService(Ci.nsIMsgComposeService);
+let MailServices = {};
+try {
+  Cu.import("resource:///modules/mailServices.js");
+} catch(ignore) {
+  // backwards compatability for pre mailServices code, may not be necessary
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "headerParser",
+                                     "@mozilla.org/messenger/headerparser;1",
+                                     "nsIMsgHeaderParser");
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "compose",
+                                     "@mozilla.org/messengercompose;1",
+                                     "nsIMsgComposeService");
+}
+
 const mCompType = Ci.nsIMsgCompType;
 
 let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
@@ -241,7 +247,7 @@ function sendMessage(params,
   //  properly set before assembling the message.
   let fields = Cc["@mozilla.org/messengercompose/composefields;1"]
                   .createInstance(Ci.nsIMsgCompFields);
-  fields.from = gHeaderParser.makeFullAddress(identity.fullName, identity.email);
+  fields.from = MailServices.headerParser.makeFullAddress(identity.fullName, identity.email);
   fields.to = to;
   if ("cc" in params)
     fields.cc = params.cc;
@@ -369,7 +375,7 @@ function sendMessage(params,
     // XXX maybe we should just use New everywhere since we're setting the
     //  parameters ourselves anyway...
     params.type = mCompType.New;
-    msgComposeService.OpenComposeWindowWithParams(null, params);
+    MailServices.compose.OpenComposeWindowWithParams(null, params);
     return true;
   } else {
     aBody.match({
@@ -393,7 +399,7 @@ function sendMessage(params,
         //  that component is supposed to talk to the "real" compose window, set the
         //  encoding, set the composition mode... we're only doing that because we
         //  can't send the message ourselves because of too many [noscript]s.
-        gMsgCompose = initCompose(msgComposeService, params);
+        gMsgCompose = initCompose(MailServices.compose, params);
       },
 
       editor: function (iframe) {
@@ -401,7 +407,7 @@ function sendMessage(params,
         fields.characterSet = "UTF-8";
         fields.useMultipartAlternative = true;
         gMsgCompose = initCompose(
-          msgComposeService,
+          MailServices.compose,
           params,
           iframe.contentWindow,
           iframe.contentWindow.docshell

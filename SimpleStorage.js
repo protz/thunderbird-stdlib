@@ -43,10 +43,7 @@
 
 var EXPORTED_SYMBOLS = ['SimpleStorage']
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
+const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
 let extPath = Cc["@mozilla.org/preferences-service;1"]
@@ -59,12 +56,21 @@ let Log = setupLogging(logRoot+".SimpleStorage");
 
 Log.debug("Simple Storage loaded.");
 
-let gStorageService = Cc["@mozilla.org/storage/service;1"]  
-                      .getService(Ci.mozIStorageService);  
-let gDbFile = Cc["@mozilla.org/file/directory_service;1"]  
-              .getService(Ci.nsIProperties)  
-              .get("ProfD", Ci.nsIFile);  
-gDbFile.append("simple_storage.sqlite");  
+let Services = {};
+try {
+  Cu.import("resource://gre/modules/Services.jsm");
+} catch(ignore) {
+  // backwards compatability for pre Services code, may not be necessary
+  Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
+
+  XPCOMUtils.defineLazyServiceGetter(Services, "storage",
+                                     "@mozilla.org/storage/service;1",
+                                     "mozIStorageService");
+}
+
+Cu.import("resource://gre/modules/FileUtils.jsm");
+const KEY_PROFILEDIR = "ProfD";
+const FILE_SIMPLE_STORAGE = "simple_storage.sqlite";
 
 const kWorkDone = 42;
 
@@ -157,7 +163,8 @@ let SimpleStorage = {
  */
 function SimpleStorageCps(aTblName) {
   // Will also create the file if it does not exist  
-  this.dbConnection = gStorageService.openDatabase(gDbFile);
+  this.dbConnection = Services.storage.openDatabase(FileUtils.getFile(KEY_PROFILEDIR,
+                                                                      [FILE_SIMPLE_STORAGE]));
   if (!this.dbConnection.tableExists(aTblName))
     this.dbConnection.executeSimpleSQL(
       "CREATE TABLE #1 (key TEXT PRIMARY KEY, value TEXT)".replace("#1", aTblName)
