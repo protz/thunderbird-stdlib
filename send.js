@@ -375,8 +375,7 @@ function sendMessage(params,
     // XXX maybe we should just use New everywhere since we're setting the
     //  parameters ourselves anyway...
     params.type = mCompType.New;
-    MailServices.compose.OpenComposeWindowWithParams(null, params);
-    return true;
+    return MailServices.compose.OpenComposeWindowWithParams(null, params);
   } else {
     aBody.match({
       plainText: function(body) {
@@ -430,10 +429,10 @@ function sendMessage(params,
 
     try {
       gMsgCompose.SendMsg(deliverType, identity, "", null, progress);
+      return gMsgCompose;
     } catch (e) {
       Log.error(e);
       dumpCallStack(e);
     }
-    return true;
   }
 }

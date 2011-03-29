@@ -138,12 +138,19 @@ let gIdentities = {};
  *  doing this at overlay load-time seems to be fine as well.
  * Beware, although gIdentities has a "default" key, it is not guaranteed to be
  *  non-null.
+ * @param aSkipNntp (optional) Should we avoid including nntp identities in the
+ *  list?
  */
-function fillIdentities() {
-  for each (let id in fixIterator(MailServices.accounts.allIdentities, Ci.nsIMsgIdentity)) {
-    // We're only interested in identities that have a real email.
-    if (id.email) {
-      gIdentities[id.email.toLowerCase()] = id;
+function fillIdentities(aSkipNntp) {
+  for each (let account in fixIterator(MailServices.accounts, Ci.nsIMsgAccount)) {
+    let server = account.incomingServer;
+    if (aSkipNntp && (!server || server.type != "pop3" && server.type != "imap"))
+      continue;
+    for each (let id in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
+      // We're only interested in identities that have a real email.
+      if (id.email) {
+        gIdentities[id.email.toLowerCase()] = id;
+      }
     }
   }
   gIdentities["default"] = MailServices.accounts.defaultAccount.defaultIdentity;
