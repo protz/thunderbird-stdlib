@@ -150,6 +150,12 @@ FakeEditor.prototype = {
     }
   },
 
+  // bodyConvertible calls GetRootElement on m_editor which is supposed to be an
+  // nsIEditor, so implement this property...
+  get rootElement () {
+    return this.iframe.contentDocument.body;
+  },
+
   QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIEditor, Ci.nsIEditorMailSupport]),
 }
 // This has to be a root because once the msgCompose has deferred the treatment
@@ -404,7 +410,6 @@ function sendMessage(params,
       editor: function (iframe) {
         fields.bodyIsAsciiOnly = false;
         fields.characterSet = "UTF-8";
-        fields.useMultipartAlternative = true;
         gMsgCompose = initCompose(
           MailServices.compose,
           params,
@@ -416,6 +421,22 @@ function sendMessage(params,
         // fakeEditor will be able to output HTML and plainText as needed...
         let fakeEditor = new FakeEditor(iframe);
         gMsgCompose.initEditor(fakeEditor, iframe.contentWindow);
+        let convertibility = gMsgCompose.bodyConvertible();
+        Log.debug("This message might be convertible:", convertibility);
+        switch (convertibility) {
+          case Ci.nsIMsgCompConvertible.Plain: // 1
+          case Ci.nsIMsgCompConvertible.Yes: // 2
+          case Ci.nsIMsgCompConvertible.Altering: // 3
+            fields.ConvertBodyToPlainText();
+            fields.forcePlainText = true;
+            fields.useMultipartAlternative = false;
+            break;
+          
+          case Ci.nsIMsgCompConvertible.No: // 4
+          default:
+            fields.useMultipartAlternative = true;
+            break;
+        }
       },
     });
 
