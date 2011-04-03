@@ -275,6 +275,16 @@ function sendMessage(params,
     case mCompType.New:
       break;
 
+    case mCompType.Draft: {
+      // Copy the references from the original draft into the message we're
+      // about to send...
+      Log.assert(urls.length == 1, "Can't edit more than one message at a time");
+      let msgHdr = msgUriToMsgHdr(urls[0]);
+      references = [msgHdr.getStringReference(i)
+        for each (i in range(0, msgHdr.numReferences))];
+      break;
+    }
+
     case mCompType.Reply:
     case mCompType.ReplyAll:
     case mCompType.ReplyToSender:
