@@ -249,24 +249,15 @@ function msgHdrsDelete(msgHdrs) {
   }
 }
 
-let w = null;
-
 /**
  * Get the main Thunderbird window. Used heavily to get a reference to globals
  *  that are defined in mail/base/content/.
- * You should call this function with true everytime your overlay on the main
- *  Thunderbird window is loaded, so that it invalidates the previous cached
- *  reference to the main window (closing the main window doesn't necessarily
- *  mean restarting Thunderbird).
- * @param {bool} aForce The results are cached, should we reset the cache?
  * @return The window object for the main window.
  */
 function getMail3Pane(aForce) {
-  if (!w || aForce)
-    w = Cc["@mozilla.org/appshell/window-mediator;1"]
+  return Cc["@mozilla.org/appshell/window-mediator;1"]
           .getService(Ci.nsIWindowMediator)
           .getMostRecentWindow("mail:3pane");
-  return w;
 }
 
 /**
