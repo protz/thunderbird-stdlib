@@ -362,10 +362,10 @@ function sendMessage(params,
   // If we want to switch to the external editor, we assembled all the
   //  composition fields properly. Pass them to a compose window, and move on.
   if (popOut) {
+    let composeHtml = determineComposeHtml(identity);
     // We set all the fields ourselves, force New so that the compose code
     //  doesn't try to figure out the parameters by itself.
     fields.characterSet = "UTF-8";
-    fields.forcePlainText = false;
     // If we don't do that the editor compose window will think that the >s that
     //  are inserted by the user are voluntary, that is, they should be escaped
     //  so that they are not parsed as quotes. We don't want that!
@@ -379,17 +379,24 @@ function sendMessage(params,
     //  middle, but well... I guess this is okay enough.
     aBody.match({
       plainText: function (body) {
-        fields.body = plainTextToHtml(body);
+        if (composeHtml)
+          fields.body = plainTextToHtml(body);
+        else
+          fields.body = body;
       },
       editor: function (iframe) {
         let html = iframe.contentDocument.body.innerHTML;
-        fields.body = html;
+        if (composeHtml)
+          fields.body = html;
+        else
+          fields.body = htmlToPlainText(html);
       },
     });
 
-    params.format = Ci.nsIMsgCompFormat.HTML;
-    // XXX maybe we should just use New everywhere since we're setting the
-    //  parameters ourselves anyway...
+    params.format = composeHtml
+      ? Ci.nsIMsgCompFormat.HTML
+      : Ci.nsIMsgCompFormat.PlainText;
+    fields.forcePlainText = composeHtml ? false : true;
     params.type = mCompType.New;
     return MailServices.compose.OpenComposeWindowWithParams(null, params);
   } else {

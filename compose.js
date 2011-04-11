@@ -44,6 +44,7 @@ var EXPORTED_SYMBOLS = [
   'quoteMsgHdr', 'citeString',
   'htmlToPlainText', 'simpleWrap',
   'plainTextToHtml', 'replyAllParams',
+  'determineComposeHtml',
 ]
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
@@ -376,4 +377,27 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
     }
     finish(to, cc, bcc);
   }, true); // do download
+}
+
+/**
+ * This function replaces nsMsgComposeService::determineComposeHTML, which is
+ * marked as [noscript], just to make our lives complicated. [insert random rant
+ * here].
+ *
+ * @param aIdentity (optional) You can specify the identity which you would like
+ * to get the preference for.
+ * @return a bool which is true if you should compose in HTML
+ */
+function determineComposeHtml(aIdentity) {
+  if (!aIdentity)
+    aIdentity = gIdentities.default;
+
+  if (aIdentity) {
+    return (aIdentity.composeHtml == Ci.nsIMsgCompFormat.HTML);
+  } else {
+    return Cc["@mozilla.org/preferences-service;1"]
+            .getService(Ci.nsIPrefService)
+            .getBranch(null)
+            .getBoolPref("mail.compose_html");
+  }
 }
