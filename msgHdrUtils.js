@@ -44,7 +44,7 @@
 var EXPORTED_SYMBOLS = [
   // Low-level XPCOM boring stuff
   'msgHdrToMessageBody', 'msgHdrToNeckoURL', 'msgHdrGetTags', 'msgUriToMsgHdr',
-  'msgHdrGetUri', 'msgHdrFromNeckoUrl',
+  'msgHdrGetUri', 'msgHdrFromNeckoUrl', 'msgHdrSetTags',
   // Quickly identify a message
   'msgHdrIsDraft', 'msgHdrIsSent', 'msgHdrIsArchive', 'msgHdrIsInbox',
   'msgHdrIsRss', 'msgHdrIsNntp', 'msgHdrIsJunk',
@@ -189,19 +189,29 @@ function msgHdrGetTags (aMsgHdr) {
   let keywords = aMsgHdr.getStringProperty("keywords");
   let keywordList = keywords.split(' ');
   let keywordMap = {};
-  for (let iKeyword = 0; iKeyword < keywordList.length; iKeyword++) {
-    let keyword = keywordList[iKeyword];
+  for (let [, keyword] in Iterator(keywordList)) {
     keywordMap[keyword] = true;
   }
 
   let tagArray = MailServices.tags.getAllTags({});
   let tags = [];
-  for (let iTag = 0; iTag < tagArray.length; iTag++) {
+  for (let [iTag, tag] in Iterator(tagArray)) {
     let tag = tagArray[iTag];
     if (tag.key in keywordMap)
       tags.push(tag);
   }
   return tags;
+}
+
+/**
+ * Set the tags for a given msgHdr.
+ *
+ * @param {nsIMsgDBHdr} aMsgHdr
+ * @param {nsIMsgTag array} aTags
+ */
+function msgHdrSetTags (aMsgHdr, aTags) {
+  let keywords = [x.key for each ([, x] in Iterator(aTags))].join(" ");
+  return aMsgHdr.setStringProperty("keywords", keywords);
 }
 
 /**
