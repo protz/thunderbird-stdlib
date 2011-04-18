@@ -376,7 +376,9 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
       }
     }
     finish(to, cc, bcc);
-  }, true); // do download
+  }, true, {
+    partsOnDemand: true,
+  }); // do download
 }
 
 /**

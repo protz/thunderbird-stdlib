@@ -63,6 +63,7 @@ const nsMsgFolderFlags_Archive  = 0x00004000;
 const nsMsgFolderFlags_Inbox    = 0x00001000;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
+Cu.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
 
 let MailServices = {};
 try {
@@ -210,8 +211,26 @@ function msgHdrGetTags (aMsgHdr) {
  * @param {nsIMsgTag array} aTags
  */
 function msgHdrSetTags (aMsgHdr, aTags) {
-  let keywords = [x.key for each ([, x] in Iterator(aTags))].join(" ");
-  return aMsgHdr.setStringProperty("keywords", keywords);
+  let oldTagList = msgHdrGetTags(aMsgHdr);
+  let oldTags = {}; // hashmap
+  for each (let [, tag] in Iterator(oldTagList))
+    oldTags[tag.key] = null;
+
+  let newTags = {};
+  let newTagList = aTags;
+  for each (let [, tag] in Iterator(newTagList))
+    newTags[tag.key] = null;
+
+  let toAdd = [x.key for each ([, x] in Iterator(newTagList))
+    if (!(x.key in oldTags))];
+  let toRemove = [x.key for each ([, x] in Iterator(oldTagList))
+    if (!(x.key in newTags))];
+
+  let folder = aMsgHdr.folder;
+  let msgHdr = toXPCOMArray([aMsgHdr], Ci.nsIMutableArray);
+  folder.addKeywordsToMessages(msgHdr, toAdd.join(" "));
+  folder.removeKeywordsFromMessages(msgHdr, toRemove.join(" "));
+  aMsgHdr.folder.msgDatabase = null;
 }
 
 /**
