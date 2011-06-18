@@ -49,20 +49,13 @@ var EXPORTED_SYMBOLS = [
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
-// __LOCATION__ is nsILocalFile
-let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
-let extPath = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefService)
-              .getBranch(null)
-              .getCharPref(ext+".path");
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource:///modules/gloda/mimemsg.js"); // For MsgHdrToMimeMessage
 
-Cu.import("resource://"+extPath+"/stdlib/misc.js");
-Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
-Cu.import("resource://"+extPath+"/log.js");
+Cu.import("resource://conversations/stdlib/misc.js");
+Cu.import("resource://conversations/stdlib/msgHdrUtils.js");
+Cu.import("resource://conversations/log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
 

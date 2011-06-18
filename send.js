@@ -63,16 +63,10 @@ try {
 
 const mCompType = Ci.nsIMsgCompType;
 
-let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
-let extPath = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefService)
-              .getBranch(null)
-              .getCharPref(ext+".path");
-
-Cu.import("resource://"+extPath+"/stdlib/misc.js");
-Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
-Cu.import("resource://"+extPath+"/stdlib/compose.js");
-Cu.import("resource://"+extPath+"/log.js");
+Cu.import("resource://conversations/stdlib/misc.js");
+Cu.import("resource://conversations/stdlib/msgHdrUtils.js");
+Cu.import("resource://conversations/stdlib/compose.js");
+Cu.import("resource://conversations/log.js");
 
 let Log = setupLogging(logRoot+".Send");
 

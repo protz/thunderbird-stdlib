@@ -45,13 +45,7 @@ var EXPORTED_SYMBOLS = ['SimpleStorage']
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
-let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
-let extPath = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefService)
-              .getBranch(null)
-              .getCharPref(ext+".path");
-
-Cu.import("resource://"+extPath+"/log.js");
+Cu.import("resource://conversations/log.js");
 let Log = setupLogging(logRoot+".SimpleStorage");
 
 Log.debug("Simple Storage loaded.");
