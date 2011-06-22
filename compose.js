@@ -49,32 +49,16 @@ var EXPORTED_SYMBOLS = [
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
-// __LOCATION__ is nsILocalFile
-let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
-let extPath = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefService)
-              .getBranch(null)
-              .getCharPref(ext+".path");
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource:///modules/gloda/mimemsg.js"); // For MsgHdrToMimeMessage
+Cu.import("resource:///modules/mailServices.js");
 
-Cu.import("resource://"+extPath+"/stdlib/misc.js");
-Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
-Cu.import("resource://"+extPath+"/log.js");
+XPCOMUtils.importRelative(this, "misc.js");
+XPCOMUtils.importRelative(this, "msgHdrUtils.js");
+XPCOMUtils.importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
-
-let MailServices = {};
-try {
-  Cu.import("resource:///modules/mailServices.js");
-} catch(ignore) {
-  // backwards compatability for pre mailServices code, may not be necessary
-  XPCOMUtils.defineLazyServiceGetter(MailServices, "headerParser",
-                                     "@mozilla.org/messenger/headerparser;1",
-                                     "nsIMsgHeaderParser");
-}
 
 /**
  * Use the mailnews component to stream a message, and process it in a way

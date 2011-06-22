@@ -45,30 +45,14 @@ var EXPORTED_SYMBOLS = ['SimpleStorage']
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
-let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
-let extPath = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefService)
-              .getBranch(null)
-              .getCharPref(ext+".path");
+Cu.import("resource://gre/modules/FileUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.importRelative(this, "../log.js");
 
-Cu.import("resource://"+extPath+"/log.js");
 let Log = setupLogging(logRoot+".SimpleStorage");
-
 Log.debug("Simple Storage loaded.");
 
-let Services = {};
-try {
-  Cu.import("resource://gre/modules/Services.jsm");
-} catch(ignore) {
-  // backwards compatability for pre Services code, may not be necessary
-  Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
-
-  XPCOMUtils.defineLazyServiceGetter(Services, "storage",
-                                     "@mozilla.org/storage/service;1",
-                                     "mozIStorageService");
-}
-
-Cu.import("resource://gre/modules/FileUtils.jsm");
 const KEY_PROFILEDIR = "ProfD";
 const FILE_SIMPLE_STORAGE = "simple_storage.sqlite";
 

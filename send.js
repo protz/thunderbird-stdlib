@@ -47,32 +47,14 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 Cu.import("resource://gre/modules/PluralForm.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
-
-let MailServices = {};
-try {
-  Cu.import("resource:///modules/mailServices.js");
-} catch(ignore) {
-  // backwards compatability for pre mailServices code, may not be necessary
-  XPCOMUtils.defineLazyServiceGetter(MailServices, "headerParser",
-                                     "@mozilla.org/messenger/headerparser;1",
-                                     "nsIMsgHeaderParser");
-  XPCOMUtils.defineLazyServiceGetter(MailServices, "compose",
-                                     "@mozilla.org/messengercompose;1",
-                                     "nsIMsgComposeService");
-}
+Cu.import("resource:///modules/mailServices.js");
 
 const mCompType = Ci.nsIMsgCompType;
 
-let ext = __LOCATION__.path.match(/(\w+)@\w+/)[1];
-let extPath = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefService)
-              .getBranch(null)
-              .getCharPref(ext+".path");
-
-Cu.import("resource://"+extPath+"/stdlib/misc.js");
-Cu.import("resource://"+extPath+"/stdlib/msgHdrUtils.js");
-Cu.import("resource://"+extPath+"/stdlib/compose.js");
-Cu.import("resource://"+extPath+"/log.js");
+XPCOMUtils.importRelative(this, "misc.js");
+XPCOMUtils.importRelative(this, "msgHdrUtils.js");
+XPCOMUtils.importRelative(this, "compose.js");
+XPCOMUtils.importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Send");
 
