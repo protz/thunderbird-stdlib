@@ -296,6 +296,11 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   let [recipients, recipientsEmailAddresses] = parse(aMsgHdr.mime2DecodedRecipients);
   let [ccList, ccListEmailAddresses] = parse(aMsgHdr.ccList);
   let [bccList, bccListEmailAddresses] = parse(aMsgHdr.bccList);
+  authorEmailAddress = authorEmailAddress.toLowerCase();
+  recipientsEmailAddresses = [x.toLowerCase()
+    for each ([, x] in Iterator(recipientsEmailAddresses))];
+  ccList = [x.toLowerCase() for each ([, x] in Iterator(ccList))];
+  bccList = [x.toLowerCase() for each ([, x] in Iterator(bccList))];
   let identity = aIdentity;
   let to = [], cc = [], bcc = [];
 
