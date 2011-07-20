@@ -52,6 +52,8 @@ const Cr = Components.results;
 
 const rdfService = Cc["@mozilla.org/rdf/rdf-service;1"]
                    .getService(Ci.nsIRDFService);
+const abManager = Cc["@mozilla.org/abmanager;1"]
+                  .getService(Ci.nsIAbManager);
 
 /**
  * The "Personal addresses" address book
@@ -70,9 +72,7 @@ const kCollectedAddressBookUri = "moz-abmdbdirectory://history.mab";
  * @return nsIAbDirectory the address book
  */
 function getAddressBookFromUri(aUri) {
-  let r = rdfService.GetResource(aUri)
-    .QueryInterface(Ci.nsIAbDirectory);
-  return r;
+  return abManager.getDirectory(aUri);
 }
 
 /**
