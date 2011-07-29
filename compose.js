@@ -311,7 +311,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
       Log.debug("This identity is null, pretty weird...");
       continue;
     }
-    let email = identity.email;
+    let email = identity.email.toLowerCase();
     if (email == authorEmailAddress)
       isReplyToOwnMsg = true;
     if (recipientsEmailAddresses.some(function (x) x == email))
