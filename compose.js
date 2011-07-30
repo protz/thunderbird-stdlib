@@ -302,6 +302,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   ccList = [x.toLowerCase() for each ([, x] in Iterator(ccList))];
   bccList = [x.toLowerCase() for each ([, x] in Iterator(bccList))];
   let identity = aIdentity;
+  let identityEmail = identity.email.toLowerCase();
   let to = [], cc = [], bcc = [];
 
   let isReplyToOwnMsg = false;
@@ -330,12 +331,12 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   }
   cc = [[cc, ccListEmailAddresses[i]]
     for each ([i, cc] in Iterator(ccList))
-    if (ccListEmailAddresses[i] != identity.email)];
+    if (ccListEmailAddresses[i] != identityEmail)];
   if (!isReplyToOwnMsg)
     cc = cc.concat
       ([[r, recipientsEmailAddresses[i]]
         for each ([i, r] in Iterator(recipients))
-        if (recipientsEmailAddresses[i] != identity.email)]);
+        if (recipientsEmailAddresses[i] != identityEmail)]);
   bcc = [[bcc, bccListEmailAddresses[i]]
     for each ([i, bcc] in Iterator(bccList))];
 
@@ -359,6 +360,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   MsgHdrToMimeMessage(aMsgHdr, null, function (aMsgHdr, aMimeMsg) {
     if ("reply-to" in aMimeMsg.headers) {
       let [[name], [email]] = parse(aMimeMsg.headers["reply-to"]);
+      email = email.toLowerCase();
       if (email) {
         cc = cc.concat([to[0]]); // move the to in cc
         to = [[name, email]];
