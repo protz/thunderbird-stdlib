@@ -137,8 +137,8 @@ function citeString(aStr) {
   let l = aStr.length;
   return aStr.replace("\n", function (match, offset, str) {
     // http://mxr.mozilla.org/comm-central/source/mozilla/editor/libeditor/text/nsInternetCiter.cpp#96
-    if (offset < l) {
-      if (str[offset+1] != ">")
+    if (offset < l - 1) {
+      if (str[offset+1] != ">" && str[offset+1] != "\n" && str[offset+1] != "\r")
         return "\n> ";
       else
         return "\n>";
