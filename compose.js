@@ -173,20 +173,29 @@ function simpleWrap(txt, width) {
       return line;
   }
 
+  /**
+   * That function takes a (long) line, and splits it into many lines.
+   * @param soFar {Array String} an accumulator of the lines we've wrapped already
+   * @param remaining {String} the remaining string to wrap
+   */
   function splitLongLine(soFar, remaining) {
     if (remaining.length > width) {
+      // Start at the end of the line, and move back until we find a word
+      // boundary.
       let i = width - 1;
       while (remaining[i] != " " && i > 0)
         i--;
+      // We found a word boundary, break there
       if (i > 0) {
         // This includes the trailing space that indicates that we are wrapping
         //  a long line with format=flowed.
         soFar.push(maybeEscape(remaining.substring(0, i+1)));
         return splitLongLine(soFar, remaining.substring(i+1, remaining.length));
       } else {
+        // No word boundary, break at the first space
         let j = remaining.indexOf(" ");
         if (j > 0) {
-          // Same remark.
+          // Same remark about the trailing space.
           soFar.push(maybeEscape(remaining.substring(0, j+1)));
           return splitLongLine(soFar, remaining.substring(j+1, remaining.length));
         } else {
@@ -196,7 +205,7 @@ function simpleWrap(txt, width) {
         }
       }
     } else {
-      // Same remark.
+      // Same remark about the trailing space.
       soFar.push(maybeEscape(remaining.trimRight()));
       return soFar.join("\n");
     }
