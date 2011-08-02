@@ -58,20 +58,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-let MailServices = {};
-try {
-  Cu.import("resource:///modules/mailServices.js");
-} catch(ignore) {
-  // backwards compatability for pre mailServices code, may not be necessary
-  Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
-
-  XPCOMUtils.defineLazyServiceGetter(MailServices, "headerParser",
-                                     "@mozilla.org/messenger/headerparser;1",
-                                     "nsIMsgHeaderParser");
-  XPCOMUtils.defineLazyServiceGetter(MailServices, "accounts",
-                                     "@mozilla.org/messenger/account-manager;1",
-                                     "nsIMsgAccountManager");
-}
+Cu.import("resource:///modules/mailServices.js");
 // That one doesn't belong to MailServices.
 XPCOMUtils.defineLazyServiceGetter(MailServices, "i18nDateFormatter",
                                    "@mozilla.org/intl/scriptabledateformat;1",

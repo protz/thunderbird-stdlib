@@ -44,7 +44,7 @@ var EXPORTED_SYMBOLS = [
   'quoteMsgHdr', 'citeString',
   'htmlToPlainText', 'simpleWrap',
   'plainTextToHtml', 'replyAllParams',
-  'determineComposeHtml',
+  'determineComposeHtml', 'composeMessageTo',
 ]
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
@@ -402,4 +402,25 @@ function determineComposeHtml(aIdentity) {
             .getBranch(null)
             .getBoolPref("mail.compose_html");
   }
+}
+
+/**
+ * Open a composition window for the given email address.
+ * @param aEmail {String}
+ * @param aDisplayedFolder {nsIMsgFolder} pass gFolderDisplay.displayedFolder
+ */
+function composeMessageTo(aEmail, aDisplayedFolder) {
+  let fields = Cc["@mozilla.org/messengercompose/composefields;1"]
+               .createInstance(Ci.nsIMsgCompFields);
+  let params = Cc["@mozilla.org/messengercompose/composeparams;1"]
+               .createInstance(Ci.nsIMsgComposeParams);
+  fields.to = aEmail
+  params.type = Ci.nsIMsgCompType.New;
+  params.format = Ci.nsIMsgCompFormat.Default;
+  if (aDisplayedFolder) {
+    params.identity = MailServices.accounts
+      .getFirstIdentityForServer(aDisplayedFolder.server);
+  }
+  params.composeFields = fields;
+  MailServices.compose.OpenComposeWindowWithParams(null, params);
 }

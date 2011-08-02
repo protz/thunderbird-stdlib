@@ -65,15 +65,7 @@ const nsMsgFolderFlags_Inbox    = 0x00001000;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
 
-let MailServices = {};
-try {
-  Cu.import("resource:///modules/mailServices.js");
-} catch(ignore) {
-  // backwards compatability for pre mailServices code, may not be necessary
-  XPCOMUtils.defineLazyServiceGetter(MailServices, "tags",
-                                     "@mozilla.org/messenger/tagservice;1",
-                                     "nsIMsgTagService");
-}
+Cu.import("resource:///modules/mailServices.js");
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
 XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
