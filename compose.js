@@ -308,8 +308,8 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   authorEmailAddress = authorEmailAddress.toLowerCase();
   recipientsEmailAddresses = [x.toLowerCase()
     for each ([, x] in Iterator(recipientsEmailAddresses))];
-  ccListEmailAddresses = [x.toLowerCase() for each ([, x] in Iterator(ccList))];
-  bccListEmailAddresses = [x.toLowerCase() for each ([, x] in Iterator(bccList))];
+  ccListEmailAddresses = [x.toLowerCase() for each ([, x] in Iterator(ccListEmailAddresses))];
+  bccListEmailAddresses = [x.toLowerCase() for each ([, x] in Iterator(bccListEmailAddresses))];
   let identity = aIdentity;
   let identityEmail = identity.email.toLowerCase();
   let to = [], cc = [], bcc = [];
