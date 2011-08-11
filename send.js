@@ -50,6 +50,7 @@ Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
 Cu.import("resource:///modules/mailServices.js");
 
 const mCompType = Ci.nsIMsgCompType;
+const isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
 
 XPCOMUtils.importRelative(this, "misc.js");
 XPCOMUtils.importRelative(this, "msgHdrUtils.js");
@@ -398,6 +399,8 @@ function sendMessage(params,
         params.format = Ci.nsIMsgCompFormat.PlainText;
         fields.forcePlainText = true;
         fields.body = simpleWrap(body, 72)+"\n";
+        let msgLineBreak = isWindows ? "\r\n" : "\n";
+        fields.body = fields.body.replace(/\r?\n/g, msgLineBreak);
 
         // This part initializes a nsIMsgCompose instance. This is useless, because
         //  that component is supposed to talk to the "real" compose window, set the
