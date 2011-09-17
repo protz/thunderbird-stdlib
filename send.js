@@ -192,6 +192,7 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
  * @param composeParameters.returnReceipt (optional)
  * @param composeParameters.receiptType (optional)
  * @param composeParameters.requestDsn (optional)
+ * @param composeParameters.securityInfo (optional)
  *
  * @param sendingParameters
  * @param sendingParameters.deliverType See Ci.nsIMsgCompDeliverMode
@@ -252,7 +253,9 @@ function sendMessage(params,
   fields.DSN = ("requestDsn" in params)
     ? params.requestDsn
     : identity.requestDSN;
-  
+  if ("securityInfo" in params)
+    fields.securityInfo = params.securityInfo;
+
   let references = [];
   switch (compType) {
     case mCompType.New:

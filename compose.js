@@ -142,6 +142,8 @@ function citeString(aStr) {
         return "\n> ";
       else
         return "\n>";
+    } else {
+      return match;
     }
   }, "g");
 }
