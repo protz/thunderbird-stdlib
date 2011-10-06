@@ -45,6 +45,7 @@ var EXPORTED_SYMBOLS = [
   'htmlToPlainText', 'simpleWrap',
   'plainTextToHtml', 'replyAllParams',
   'determineComposeHtml', 'composeMessageTo',
+  'getSignatureContentsForAccount',
 ]
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
@@ -425,4 +426,55 @@ function composeMessageTo(aEmail, aDisplayedFolder) {
   }
   params.composeFields = fields;
   MailServices.compose.OpenComposeWindowWithParams(null, params);
+}
+
+/**
+ * Returns signature contents depending on account settings of the identity.
+ * HTML signature is converted to plain text.
+ * @param {nsIIdentity} The identity you've picked for the reply.
+ * @return {String} plain text signature
+ */
+function getSignatureContentsForAccount(aIdentity) {
+  let signature = "";
+  if (!aIdentity)
+    return signature;
+
+  if (aIdentity.attachSignature && aIdentity.signature) {
+    let charset = systemCharset();
+    const replacementChar =
+      Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER;
+    let fstream = Cc["@mozilla.org/network/file-input-stream;1"]
+                    .createInstance(Ci.nsIFileInputStream);
+    let cstream = Cc["@mozilla.org/intl/converter-input-stream;1"]
+                    .createInstance(Ci.nsIConverterInputStream);
+    try {
+      fstream.init(aIdentity.signature, -1, 0, 0);
+      try {
+        cstream.init(fstream, charset, 1024, replacementChar);
+      } catch (e) {
+        Log.error("ConverterInputStream init error: "+e+
+                  "\n charset: "+charset+"\n");
+        cstream.init(fstream, "UTF-8", 1024, replacementChar);
+      }
+      let str = {};
+      while (cstream.readString(4096, str) != 0) {
+        signature += str.value;
+      }
+      if (aIdentity.signature.path.match(/\.html$/)) {
+        signature = htmlToPlainText(signature);
+      }
+    } catch (e) {
+      Log.error("Signature file stream error: "+e+"\n");
+    }
+    cstream.close();
+    fstream.close();
+    // required for stripSignatureIfNeeded working properly
+    signature = signature.replace(/\r?\n/g, "\n");
+  }
+  else {
+    signature = aIdentity.htmlSigFormat
+      ? htmlToPlainText(aIdentity.htmlSigText)
+      : aIdentity.htmlSigText;
+  }
+  return signature;
 }
