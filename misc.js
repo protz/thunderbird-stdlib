@@ -52,6 +52,8 @@ var EXPORTED_SYMBOLS = [
   'dateAsInMessageList', 'escapeHtml', 'parseMimeLine',
   // Useful for web content
   'encodeUrlParameters', 'decodeUrlParameters',
+  // Character set helpers
+  'systemCharset',
 ]
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
@@ -240,4 +242,34 @@ function decodeUrlParameters(aStr) {
     }
   }
   return params;
+}
+
+/**
+ * Returns a system character set string, which is system code page on Windows,
+ * LANG environment variable's encoding on Unix-like OS, otherwise UTF-8.
+ * @return {String} a character set string
+ */
+function systemCharset() {
+  let charset = "UTF-8";
+  if ("@mozilla.org/windows-registry-key;1" in Cc) {
+    let registry = Cc["@mozilla.org/windows-registry-key;1"]
+                     .createInstance(Ci.nsIWindowsRegKey);
+    registry.open(registry.ROOT_KEY_LOCAL_MACHINE,
+                  "SYSTEM\\CurrentControlSet\\Control\\Nls\\CodePage",
+                  registry.ACCESS_READ);
+    let codePage = registry.readStringValue("ACP");
+    if (codePage) {
+      charset = "CP" + codePage;
+    }
+    registry.close();
+  }
+  else {
+    let env = Cc["@mozilla.org/process/environment;1"]
+                .getService(Ci.nsIEnvironment);
+    let lang = env.get("LANG").split(".");
+    if (lang.length > 1) {
+      charset = lang[1];
+    }
+  }
+  return charset;
 }
