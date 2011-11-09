@@ -52,6 +52,8 @@ var EXPORTED_SYMBOLS = [
   'msgHdrsMarkAsRead', 'msgHdrsArchive', 'msgHdrsDelete',
   // Doesn't really belong here
   'getMail3Pane',
+  // Higher-level functions
+  'msgHdrGetHeaders',
 ]
 
   const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
@@ -63,8 +65,9 @@ const nsMsgFolderFlags_Archive  = 0x00004000;
 const nsMsgFolderFlags_Inbox    = 0x00001000;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
+Cu.import("resource:///modules/gloda/mimemsg.js");
+Cu.import("resource:///modules/gloda/utils.js");
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
-
 Cu.import("resource:///modules/mailServices.js");
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
@@ -379,4 +382,90 @@ function msgHdrMarkAsJunk(msgHdr) {
   //http://mxr.mozilla.org/comm-central/source/mailnews/base/content/junkCommands.js#241
   //the listener is for automatic classification, for manual marking, the
   //junkstatusorigin needs to be changed
+}
+
+/**
+ * Recycling the HeaderHandlerBase from mimemsg.js
+ */
+function HeaderHandler(aHeaders) {
+  this.headers = aHeaders;
+}
+
+HeaderHandler.prototype = {
+  __proto__: MimeMessage.prototype.__proto__, // == HeaderHandlerBase
+};
+
+/**
+ * Creates a stream listener that will call k once done, passing it the string
+ * that has been read.
+ */
+function createStreamListener(k) {
+  return {
+    _data: "",
+    _stream : null,
+
+    QueryInterface:
+      XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
+
+    // nsIRequestObserver
+    onStartRequest: function(aRequest, aContext) {
+    },
+    onStopRequest: function(aRequest, aContext, aStatusCode) {
+      k(this._data);
+    },
+
+    // nsIStreamListener
+    onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
+      if (this._stream == null) {
+        this._stream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+        this._stream.init(aInputStream);
+      }
+      this._data += this._stream.read(aCount);
+    }
+  };
+}
+
+/**
+ * @param aMsgHdr The message header whose headers you want
+ * @param k A function that takes an array, whose keys are lowercased header
+ *   names, and whose values are the list of header values.
+ */
+function msgHdrGetHeaders(aMsgHdr, k) {
+  let uri = msgHdrGetUri(aMsgHdr);
+  let messageService = MailServices.messenger.messageServiceFromURI(uri);
+
+  let fallback = function ()
+    MsgHdrToMimeMessage(aMsgHdr, null, function (aMsgHdr, aMimeMsg) {
+      k(aMimeMsg);
+    }, true, {
+      partsOnDemand: true,
+    });
+
+  // Find other uses for this function. Fix it because it doesn't work with
+  // headers that span multiple lines (regex-pawa ?)
+  if ("streamHeaders" in messageService) {
+    try {
+      messageService.streamHeaders(uri, createStreamListener(function (aRawString) {
+        let re = /\r?\n\s+/g;
+        let str = aRawString.replace(re, " ");
+        let lines = str.split(/\r?\n/);
+        let obj = {};
+        for each (let [, line] in Iterator(lines)) {
+          let i = line.indexOf(":");
+          if (i < 0)
+            continue;
+          let k = line.substring(0, i).toLowerCase();
+          let v = line.substring(i+1).trim();
+          if (!(k in obj))
+            obj[k] = [];
+          obj[k].push(GlodaUtils.deMime(v));
+        }
+        k(new HeaderHandler(obj));
+      }), null, true);
+    } catch (e) {
+      fallback();
+    }
+  } else {
+    fallback();
+  }
 }

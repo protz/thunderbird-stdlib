@@ -52,7 +52,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource://gre/modules/NetUtil.jsm");
-Cu.import("resource:///modules/gloda/mimemsg.js"); // For MsgHdrToMimeMessage
+Cu.import("resource:///modules/gloda/mimemsg.js");
 Cu.import("resource:///modules/mailServices.js");
 
 XPCOMUtils.importRelative(this, "misc.js");
@@ -369,9 +369,9 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   }
 
   // Do we have a Reply-To header?
-  MsgHdrToMimeMessage(aMsgHdr, null, function (aMsgHdr, aMimeMsg) {
-    if ("reply-to" in aMimeMsg.headers) {
-      let [[name], [email]] = parse(aMimeMsg.headers["reply-to"]);
+  msgHdrGetHeaders(aMsgHdr, function (aHeaders) {
+    if (aHeaders.has("reply-to")) {
+      let [[name], [email]] = parse(aHeaders.get("reply-to"));
       email = email.toLowerCase();
       if (email) {
         cc = cc.concat([to[0]]); // move the to in cc
@@ -379,8 +379,6 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
       }
     }
     finish(to, cc, bcc);
-  }, true, {
-    partsOnDemand: true,
   }); // do download
 }
 
