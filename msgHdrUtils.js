@@ -427,8 +427,10 @@ function createStreamListener(k) {
 
 /**
  * @param aMsgHdr The message header whose headers you want
- * @param k A function that takes an array, whose keys are lowercased header
- *   names, and whose values are the list of header values.
+ * @param k A function that takes a HeaderHandler object (see mimemsg.js).
+ *  Such an object has a get function, a has function. It has a header property,
+ *  whose keys are lowercased header names, and whose values are list of
+ *  strings corresponding to the multiple entries found for that header.
  */
 function msgHdrGetHeaders(aMsgHdr, k) {
   let uri = msgHdrGetUri(aMsgHdr);
@@ -441,8 +443,6 @@ function msgHdrGetHeaders(aMsgHdr, k) {
       partsOnDemand: true,
     });
 
-  // Find other uses for this function. Fix it because it doesn't work with
-  // headers that span multiple lines (regex-pawa ?)
   if ("streamHeaders" in messageService) {
     try {
       messageService.streamHeaders(uri, createStreamListener(function (aRawString) {
