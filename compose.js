@@ -126,7 +126,11 @@ function quoteMsgHdr(aMsgHdr, k) {
   //                     in string charset, in boolean headersOnly);
   let quoter = Cc["@mozilla.org/messengercompose/quoting;1"]
                .createInstance(Ci.nsIMsgQuote);
-  quoter.quoteMessage(msgUri, false, listener, "", false);
+  try {
+    quoter.quoteMessage(msgUri, false, listener, "", false);
+  } catch (e if e.result == Cr.NS_ERROR_XPC_NOT_ENOUGH_ARGS) {
+    quoter.quoteMessage(msgUri, false, listener, "", false, aMsgHdr);
+  }
 }
 
 /**
