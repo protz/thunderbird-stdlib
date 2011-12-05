@@ -458,7 +458,7 @@ function msgHdrGetHeaders(aMsgHdr, k) {
           let v = line.substring(i+1).trim();
           if (!(k in obj))
             obj[k] = [];
-          obj[k].push(GlodaUtils.deMime(v));
+          obj[k].push(v);
         }
         k(new HeaderHandler(obj));
       }), null, true);
