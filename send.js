@@ -67,6 +67,10 @@ let Log = setupLogging(logRoot+".Send");
  * @return {String} The URI for the folder. Use MailUtils.getFolderForURI.
  */
 function getArchiveFolderUriFor(identity, msgDate) {
+  /**
+   * I think this function isn't doing the right thing when we have a GMail
+   * folder...
+   */
   let msgYear = msgDate.getFullYear().toString();
   let monthFolderName = msgDate.toLocaleFormat("%Y-%m");
   let granularity = identity.archiveGranularity;
@@ -305,20 +309,50 @@ function sendMessage(params,
   fields.references = references.join(" ");
   [fields.addAttachment(x) for each ([, x] in Iterator(attachments))];
 
-  // If we are to archive the conversation after sending, this means we also
-  //  have to archive the sent message as well. The simple way to do it is to
-  //  change the FCC (Folder CC) from the Sent folder to the Archives folder.
+  let fccFolder = identity.fccFolder;
+  let fccSameFolder = identity.fccReplyFollowsParent;
+  let doFcc = identity.doFcc;
+  let isReply = !urls.length ||
+    compType == Ci.nsIMsgCompType.Reply ||
+    compType == Ci.nsIMsgCompType.ReplyAll ||
+    compType == Ci.nsIMsgCompType.ReplyToGroup ||
+    compType == Ci.nsIMsgCompType.ReplyToSender ||
+    compType == Ci.nsIMsgCompType.ReplyToSenderAndGroup ||
+    compType == Ci.nsIMsgCompType.ReplyWithTemplate;
+  let defaultFcc =
+    fccFolder.indexOf("nocopy://") == 0
+    ? ""
+    : fccFolder;
+  // Replicating the whole logic from nsMsgSend.cpp:2840... with our own archive
+  // feat.
   if (archive) {
-    // We're just assuming that the folder exists, this might not be the case...
-    // But I am so NOT reimplementing the whole logic from
-    //  http://mxr.mozilla.org/comm-central/source/mail/base/content/mailWindowOverlay.js#1293
+    // If we are to archive the conversation after sending, this means we also
+    //  have to archive the sent message as well. The simple way to do it is to
+    //  change the FCC (Folder CC) from the Sent folder to the Archives folder.
     let folderUri = getArchiveFolderUriFor(identity, new Date());
     if (MailUtils.getFolderForURI(folderUri, true)) {
+      // We're just assuming that the folder exists, this might not be the case...
+      // But I am so NOT reimplementing the whole logic from
+      //  http://mxr.mozilla.org/comm-central/source/mail/base/content/mailWindowOverlay.js#1293
       Log.debug("Message will be copied in", folderUri, "once sent");
       fields.fcc = folderUri;
     } else {
       Log.warn("The archive folder doesn't exist yet, so the last message you sent won't be archived... sorry!");
     }
+  } else if (!doFcc) {
+    // The user has unchecked "place a copy of the sent message..."
+    fields.fcc = "";
+  } else if (isReply && fccSameFolder) {
+    // "Place a copy of sent messages in the folder of the message being replied
+    // to..."
+    let msgHdr = msgUriToMsgHdr(urls[0]);
+    if (msgHdr.folder.canFileMessages) {
+      fields.fcc = msgHdr.folder.URI;
+    } else {
+      fields.fcc = defaultFcc;
+    }
+  } else {
+    fields.fcc = defaultFcc;
   }
 
   // We init the composition service with the right parameters, and we make sure
