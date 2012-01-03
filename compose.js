@@ -462,7 +462,7 @@ function getSignatureContentsForAccount(aIdentity) {
       while (cstream.readString(4096, str) != 0) {
         signature += str.value;
       }
-      if (aIdentity.signature.path.match(/\.html$/)) {
+      if (aIdentity.signature.path.match(/\.html?$/)) {
         signature = htmlToPlainText(signature);
       }
     } catch (e) {
