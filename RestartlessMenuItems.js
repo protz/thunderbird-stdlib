@@ -11,7 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is ............
+ * The Original Code is about:telemetry integration code for Thunderbird
  *
  * The Initial Developer of the Original Code is
  *  Jonathan Protzenko <jonathan.protzenko@gmail.com>
@@ -19,7 +19,9 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *  Szabolcs Hubai <szab.hu@gmail.com> 
+ *  Szabolcs Hubai <szab.hu@gmail.com>
+ *  Mike Hommey <mh@glandium.org>
+ *  Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,7 +38,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 /**
- * @fileoverview ........
+ * @fileoverview Provides a wrapper for easily adding and 
+ *  removing menu items in a restartless fashion.
  * @author Jonathan Protzenko
  */
  
