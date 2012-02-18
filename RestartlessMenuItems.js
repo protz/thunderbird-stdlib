@@ -43,18 +43,13 @@
  * @author Jonathan Protzenko
  */
  
-let EXPORTED_SYMBOLS = ['patchTBWindow'];
+let EXPORTED_SYMBOLS = ['RestartlessMenuItems'];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cm = Components.manager;
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
 
 Cu.import("resource://gre/modules/Services.jsm");
 
-let patchTBWindow = {};
-
-let _menuItem = null;
+let _menuItems = [];
 
 function isThunderbird()
 {
@@ -64,27 +59,40 @@ function isThunderbird()
 
 var global = this;
 
-function monkeyPatchWindow(w, loadedAlready) {
+/**
+ * Adds a menuitem to a window.
+ * @param w {nsIDOMWindow} A window to patch.
+ * @param loadedAlready {bool} The window above is fully loaded, 
+ *  or we should wait to be loaded.
+ * @param options {Object} Options for the <tt>menuitem</tt>, with the following parameters:
+ * @param options.id {String} An id for the <tt>menuitem</tt>, this should be namespaced.
+ * @param options.label {String} A label for the <tt>menuitem</tt>.
+ * @param options.url {String} An URL where the <tt>onclick</tt> should navigate to
+ */
+function monkeyPatchWindow(w, loadedAlready, options) {
   let doIt = function () {
+    let id = options.id;
     let taskPopup = w.document.getElementById("taskPopup");
     let tabmail = w.document.getElementById("tabmail");
-    let menuitem = w.document.getElementById(_menuItem.id);
+    let oldMenuitem = w.document.getElementById(id);
 
     // Check the windows is a mail:3pane
-    // and should be patched or not
-    if (!taskPopup || !tabmail || menuitem)
+    if (!taskPopup || !tabmail)
       return;
 
-    menuitem = w.document.createElement("menuitem");
+    let menuitem = w.document.createElement("menuitem");
     menuitem.addEventListener("command", function () {
       w.document.getElementById("tabmail").openTab(
         "contentTab",
-        { contentPage: _menuItem.url }
+        { contentPage: options.url }
       );
     }, false);
-    menuitem.setAttribute("label", _menuItem.label);
-    menuitem.setAttribute("id", _menuItem.id);
-    taskPopup.appendChild(menuitem);
+    menuitem.setAttribute("label", options.label);
+    menuitem.setAttribute("id", id);
+    if (!oldMenuitem)
+      taskPopup.appendChild(menuitem);
+    else
+      taskPopup.replaceChild(menuitem, oldMenuitem);
   };
   if (loadedAlready)
     doIt();
@@ -92,48 +100,112 @@ function monkeyPatchWindow(w, loadedAlready) {
     w.addEventListener("load", doIt, false);
 }
 
-function unMonkeyPatchWindow(w) {
-  let menuitem = w.document.getElementById(_menuItem.id);
-  menuitem.parentNode.removeChild(menuitem);
+/**
+ * Removes a menuitem from a window.
+ * @param w {nsIDOMWindow} A window to patch.
+ * @param options {Object} Options for the <tt>menuitem</tt>, with the following parameter:
+ * @param options.id {String} An id for the <tt>menuitem</tt>, this should be namespaced.
+ */
+function unMonkeyPatchWindow(w, options) {
+  let id = options.id;
+  let menuitem = w.document.getElementById(id);
+
+  // Remove all menuitem with this id
+  while (menuitem) {
+    menuitem.parentNode.removeChild(menuitem);
+    menuitem = w.document.getElementById(id);
+  }
 }
 
-function startup(options) {
-  _menuItem = options.menuItem;
-  
-  // For Thunderbird, since there's no URL bar, we add a menu item to make it
-  // more discoverable.
-  if (isThunderbird()) {
-    // Thunderbird-specific JSM
-    Cu.import("resource:///modules/iteratorUtils.jsm", global);
+/**
+ * This is Our observer. It catches the newly opened windows
+ *  and tries to run the patcher on them.
+ * @observes "domwindowopened"
+ *
+ * @prop observe An nsIWindowWatcher will notify this method. It will call the {@link monkeyPatchWindow}.
+ * @prop register Start listening to notifications.
+ * @prop unregister Stop listening to notifications.
+ */
+function monkeyPatchWindowObserver() {};
 
-    // Patch all existing windows
-    for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane"), Ci.nsIDOMWindow)) {
-      // True means the window's been loaded already, so add the menu item right
-      // away (the default is: wait for the "load" event).
-      monkeyPatchWindow(w.window, true);
+monkeyPatchWindowObserver.prototype = {
+  observe: function (aSubject, aTopic, aData) {
+    if (aTopic == "domwindowopened") {
+      aSubject.QueryInterface(Ci.nsIDOMWindow);
+      for each (let aMenuItem in _menuItems)
+        monkeyPatchWindow(aSubject.window, false, aMenuItem);
     }
-
-    // Patch all future windows
-    Services.ww.registerNotification({
-      observe: function (aSubject, aTopic, aData) {
-        if (aTopic == "domwindowopened") {
-          aSubject.QueryInterface(Ci.nsIDOMWindow);
-          monkeyPatchWindow(aSubject.window);
-        }
-      },
-    });
+  },
+  register: function() {
+    Services.ww.registerNotification(this);
+  },
+  unregister: function() {
+    Services.ww.unregisterNotification(this);
   }
 }
 
-function shutdown() {
-  if (isThunderbird) {
-    // Un-patch all existing windows
-    for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
-      unMonkeyPatchWindow(w);
-    
-    _menuItem = null;
-  }
-}
+/**
+ * This is the observer Object.
+ */
+let monkeyPatchFutureWindow = new monkeyPatchWindowObserver();
 
-patchTBWindow.startup = startup;
-patchTBWindow.shutdown = shutdown;
+/**
+ * This is the public interface of the RestartlessMenuItems module.
+ * 
+ * @prop add Adds a parameterized <tt>menuitem</tt> to existing and 
+ *  newly created windows.
+ * @prop remove Removes an identified <tt>menuitem</tt> from 
+ *  existing window, and will not add to new ones.
+ * @prop removeAll Removes all the <tt>menuitem</tt>s currently added.
+ */
+var RestartlessMenuItems = {
+  add: function _RestartlessMenuItems_add (options) {
+    // For Thunderbird, since there's no URL bar, we add a menu item to make it
+    // more discoverable.
+    if (isThunderbird()) {
+      // Thunderbird-specific JSM
+      Cu.import("resource:///modules/iteratorUtils.jsm", global);
+
+      // Push it to our list
+      _menuItems.push(options);
+
+      // Patch all existing windows
+      for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane"), Ci.nsIDOMWindow)) {
+        // True means the window's been loaded already, so add the menu item right
+        // away (the default is: wait for the "load" event).
+        monkeyPatchWindow(w.window, true, options);
+      }
+
+      // Patch all future windows 
+      // with our list of menuItems
+      if (_menuItems.length == 1)
+        monkeyPatchFutureWindow.register();
+    }
+  },
+
+  remove: function _RestartlessMenuItems_remove (options) {
+    if (isThunderbird) {
+      // Un-patch all existing windows
+      for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
+        unMonkeyPatchWindow(w, options);
+
+      // Pop out from our list
+      let index = _menuItems.indexOf(options);
+      if (index != -1)
+        _menuItems.splice(index, 1);
+
+      // Stop patching future windows if our list is empty
+      if (_menuItems.length == 0)
+        monkeyPatchFutureWindow.unregister();
+    }
+  },
+
+  removeAll: function _RestartlessMenuItems_removeAll (options) {
+    if (isThunderbird) {
+      // Remove all added menuitems
+      for each (let aMenuItem in _menuItems)
+        this.remove(aMenuItem);
+    }
+  },
+
+};
