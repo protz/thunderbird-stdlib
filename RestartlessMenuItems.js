@@ -67,8 +67,11 @@ var global = this;
  * @param options {Object} Options for the <tt>menuitem</tt>, with the following parameters:
  * @param options.id {String} An id for the <tt>menuitem</tt>, this should be namespaced.
  * @param options.label {String} A label for the <tt>menuitem</tt>.
- * @param options.url {String} An URL where the <tt>onclick</tt> should navigate to
- * @param options.onCommand {String} An URL where the <tt>onclick</tt> should navigate to
+ * @param options.url {String} (optional, preferred) An URL where the <tt>oncommand</tt> should navigate to.
+ * @param options.onCommand {String} (optional) A function callback what the <tt>menuitem</tt>'s oncommand will call.
+ * @param options.accesskey {String} (optional) An access key for the <tt>menuitem</tt>.
+ * @param options.key {String} (optional) A shortcut key for the <tt>menuitem</tt>.
+ * @param options.image {String} (optional) An URL for the <tt>menuitem</tt>.
  */
 function monkeyPatchWindow(w, loadedAlready, options) {
   let doIt = function () {
@@ -97,6 +100,14 @@ function monkeyPatchWindow(w, loadedAlready, options) {
     menuitem.addEventListener("command", onCmd, false);
     menuitem.setAttribute("label", options.label);
     menuitem.setAttribute("id", id);
+    if (options.accesskey)
+      menuitem.setAttribute("accesskey", options.accesskey);
+    if (options.key)
+      menuitem.setAttribute("key", options.key);
+    if (options.image) {
+      menuitem.setAttribute("class", "menuitem-iconic");
+      menuitem.style.listStyleImage = "url('" + options.image + "')";
+    }
     if (!oldMenuitem)
       taskPopup.appendChild(menuitem);
     else
@@ -217,18 +228,21 @@ var RestartlessMenuItems = {
 
   remove: function _RestartlessMenuItems_remove (options, keepArray) {
     if (isThunderbird) {
+      // Find the menuitem by id
+      let index = -1;
+      _menuItems.filter( function isOurMenuItem (element, arrayIndex){
+        if (element.id == options.id)
+          index = arrayIndex;
+        return (element.id == options.id);
+      });
+      
       // Un-patch all existing windows
-      for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
-        unMonkeyPatchWindow(w, options);
+      if (index != -1)
+        for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
+          unMonkeyPatchWindow(w, _menuItems[index]);
 
       if (!keepArray) {
         // Pop out from our list
-        let index = -1; //= _menuItems.indexOf(options);
-        _menuItems.filter( function isOurMenuItem (element, arrayIndex){
-          if (element.id == options.id)
-            index = arrayIndex;
-          return (element.id == options.id);
-        });
         if (index != -1)
           _menuItems.splice(index, 1);
 
