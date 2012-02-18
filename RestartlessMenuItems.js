@@ -68,6 +68,7 @@ var global = this;
  * @param options.id {String} An id for the <tt>menuitem</tt>, this should be namespaced.
  * @param options.label {String} A label for the <tt>menuitem</tt>.
  * @param options.url {String} An URL where the <tt>onclick</tt> should navigate to
+ * @param options.onCommand {String} An URL where the <tt>onclick</tt> should navigate to
  */
 function monkeyPatchWindow(w, loadedAlready, options) {
   let doIt = function () {
@@ -80,13 +81,20 @@ function monkeyPatchWindow(w, loadedAlready, options) {
     if (!taskPopup || !tabmail)
       return;
 
+    let openTabUrl = function() {
+      return (options.url) ?
+        tabmail.openTab("contentTab",
+          { contentPage: options.url }
+        )
+        : false;
+    };
+    
+    let onCmd = function() {
+      openTabUrl() || options.onCommand && options.onCommand();
+    };
+
     let menuitem = w.document.createElement("menuitem");
-    menuitem.addEventListener("command", function () {
-      w.document.getElementById("tabmail").openTab(
-        "contentTab",
-        { contentPage: options.url }
-      );
-    }, false);
+    menuitem.addEventListener("command", onCmd, false);
     menuitem.setAttribute("label", options.label);
     menuitem.setAttribute("id", id);
     if (!oldMenuitem)
@@ -105,16 +113,40 @@ function monkeyPatchWindow(w, loadedAlready, options) {
  * @param w {nsIDOMWindow} A window to patch.
  * @param options {Object} Options for the <tt>menuitem</tt>, with the following parameter:
  * @param options.id {String} An id for the <tt>menuitem</tt>, this should be namespaced.
+ * @param options.url {String} (optional) An URL for the <tt>menuitem</tt>, tabs with this URL will be closed.
+ * @param options.onUnload {Function} (optional) A function for the <tt>menuitem</tt>, which redoes all the stuff
+ *  except the removing of menuitem.
  */
 function unMonkeyPatchWindow(w, options) {
   let id = options.id;
   let menuitem = w.document.getElementById(id);
+  let tabmail = w.document.getElementById("tabmail");
 
   // Remove all menuitem with this id
   while (menuitem) {
     menuitem.parentNode.removeChild(menuitem);
     menuitem = w.document.getElementById(id);
   }
+
+  // Close all tab with options.url URL
+  let removeTabUrl = function() {
+    let tabMode = tabmail.tabModes["contentTab"];
+    let shouldSwitchToFunc = tabMode.shouldSwitchTo ||
+                            tabMode.tabType.shouldSwitchTo;
+
+    if (shouldSwitchToFunc) {
+      let tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [{ contentPage: options.url }]);
+      while (tabIndex >= 0) {
+        tabmail.closeTab(tabIndex, true);
+        tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [{ contentPage: options.url }]);
+      }
+    }
+  };
+
+  if (options.url)
+    removeTabUrl();
+  else
+    options.onUnload && options.onUnload();
 }
 
 /**
@@ -183,28 +215,37 @@ var RestartlessMenuItems = {
     }
   },
 
-  remove: function _RestartlessMenuItems_remove (options) {
+  remove: function _RestartlessMenuItems_remove (options, keepArray) {
     if (isThunderbird) {
       // Un-patch all existing windows
       for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
         unMonkeyPatchWindow(w, options);
 
-      // Pop out from our list
-      let index = _menuItems.indexOf(options);
-      if (index != -1)
-        _menuItems.splice(index, 1);
+      if (!keepArray) {
+        // Pop out from our list
+        let index = -1; //= _menuItems.indexOf(options);
+        _menuItems.filter( function isOurMenuItem (element, arrayIndex){
+          if (element.id == options.id)
+            index = arrayIndex;
+          return (element.id == options.id);
+        });
+        if (index != -1)
+          _menuItems.splice(index, 1);
 
-      // Stop patching future windows if our list is empty
-      if (_menuItems.length == 0)
-        monkeyPatchFutureWindow.unregister();
+        // Stop patching future windows if our list is empty
+        if (_menuItems.length == 0)
+          monkeyPatchFutureWindow.unregister();
+      }
     }
   },
 
-  removeAll: function _RestartlessMenuItems_removeAll (options) {
+  removeAll: function _RestartlessMenuItems_removeAll () {
     if (isThunderbird) {
       // Remove all added menuitems
       for each (let aMenuItem in _menuItems)
-        this.remove(aMenuItem);
+        this.remove(aMenuItem, true);
+      _menuItems = [];
+      monkeyPatchFutureWindow.unregister();
     }
   },
 
