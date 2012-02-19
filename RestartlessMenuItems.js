@@ -227,7 +227,7 @@ var RestartlessMenuItems = {
   },
 
   remove: function _RestartlessMenuItems_remove (options, keepArray) {
-    if (isThunderbird) {
+    if (isThunderbird()) {
       // Find the menuitem by id
       let index = -1;
       _menuItems.filter( function isOurMenuItem (element, arrayIndex){
@@ -254,7 +254,7 @@ var RestartlessMenuItems = {
   },
 
   removeAll: function _RestartlessMenuItems_removeAll () {
-    if (isThunderbird) {
+    if (isThunderbird()) {
       // Remove all added menuitems
       for each (let aMenuItem in _menuItems)
         this.remove(aMenuItem, true);
