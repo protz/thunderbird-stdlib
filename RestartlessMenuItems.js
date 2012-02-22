@@ -228,22 +228,23 @@ var RestartlessMenuItems = {
 
   remove: function _RestartlessMenuItems_remove (options, keepArray) {
     if (isThunderbird()) {
-      // Find the menuitem by id
+      // Find the menuitem in our list by id
+      let found = false;
       let index = -1;
-      _menuItems.filter( function isOurMenuItem (element, arrayIndex){
+      found = _menuItems.some( function isOurMenuItem (element, arrayIndex){
         if (element.id == options.id)
           index = arrayIndex;
         return (element.id == options.id);
       });
       
       // Un-patch all existing windows
-      if (index != -1)
+      if (found)
         for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
           unMonkeyPatchWindow(w, _menuItems[index]);
 
       if (!keepArray) {
         // Pop out from our list
-        if (index != -1)
+        if (found)
           _menuItems.splice(index, 1);
 
         // Stop patching future windows if our list is empty
