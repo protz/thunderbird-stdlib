@@ -438,7 +438,9 @@ function sendMessage(params,
         //  is clearly a FIXME.
         params.format = Ci.nsIMsgCompFormat.PlainText;
         fields.forcePlainText = true;
-        fields.body = simpleWrap(body, 72)+"\n";
+        // Strip trailing whitespace before wrapping, so as not to interpret it
+        // as a f=f line continuation.
+        fields.body = simpleWrap(body.replace(/ +$/gm, ""), 72)+"\n";
         let msgLineBreak = isWindows ? "\r\n" : "\n";
         fields.body = fields.body.replace(/\r?\n/g, msgLineBreak);
 
