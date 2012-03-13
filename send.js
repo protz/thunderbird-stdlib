@@ -341,6 +341,7 @@ function sendMessage(params,
       fields.fcc = folderUri;
     } else {
       Log.warn("The archive folder doesn't exist yet, so the last message you sent won't be archived... sorry!");
+      fields.fcc = defaultFcc;
     }
   } else if (!doFcc) {
     // The user has unchecked "place a copy of the sent message..."
