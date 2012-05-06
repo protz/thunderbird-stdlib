@@ -358,7 +358,8 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
 
   let finish = function (to, cc, bcc) {
     let hashMap = {};
-    hashMap[to[0][1]] = null;
+    for each (let [name, email] in to)
+      hashMap[email] = null;
     cc = cc.filter(function ([name, email])
       let (r = (email in hashMap))
       (hashMap[email] = null,
@@ -375,15 +376,16 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   // Do we have a Reply-To header?
   msgHdrGetHeaders(aMsgHdr, function (aHeaders) {
     if (aHeaders.has("reply-to")) {
-      let [[name], [email]] = parse(aHeaders.get("reply-to"));
-      email = email.toLowerCase();
-      if (email) {
+      let [names, emails] = parse(aHeaders.get("reply-to"));
+      emails = [email.toLowerCase() for each (email in emails)];
+      if (emails.length) {
+        // Invariant: at this stage, we only have one item in to.
         cc = cc.concat([to[0]]); // move the to in cc
-        to = [[name, email]];
+        to = combine(names, emails);
       }
     }
     finish(to, cc, bcc);
-  }); // do download
+  });
 }
 
 /**

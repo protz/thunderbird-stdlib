@@ -45,7 +45,7 @@ var EXPORTED_SYMBOLS = [
   // Identity management helpers
   'gIdentities', 'fillIdentities',
   // JS programming helpers
-  'range', 'MixIn',
+  'range', 'MixIn', 'combine',
   // XPCOM helpers
   'NS_FAILED', 'NS_SUCCEEDED',
   // Various formatting helpers
@@ -272,4 +272,10 @@ function systemCharset() {
     }
   }
   return charset;
+}
+
+function combine(a1, a2) {
+  if (a1.length != a2.length)
+    throw new Error("combine: the given arrays have different lengths");
+  return [[a1[i], a2[i]] for each (i in range(0, a1.length))];
 }
