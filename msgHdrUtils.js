@@ -386,7 +386,9 @@ function msgHdrGetHeaders(aMsgHdr, k) {
       partsOnDemand: true,
     });
 
-  if ("streamHeaders" in messageService) {
+  // This is intentionally disabled because there's a bug in Thunderbird that
+  // renders the supposedly-useful streamHeaders function unusable.
+  if (false && "streamHeaders" in messageService) {
     try {
       messageService.streamHeaders(uri, createStreamListener(function (aRawString) {
         let re = /\r?\n\s+/g;
