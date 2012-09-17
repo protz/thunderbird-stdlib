@@ -316,7 +316,7 @@ function sendMessage(params,
   // "Place replies in the folder of the message being replied to"
   let fccSameFolder = identity.fccReplyFollowsParent;
   let doFcc = identity.doFcc;
-  let isReply = !urls.length ||
+  let isReply =
     compType == Ci.nsIMsgCompType.Reply ||
     compType == Ci.nsIMsgCompType.ReplyAll ||
     compType == Ci.nsIMsgCompType.ReplyToGroup ||
