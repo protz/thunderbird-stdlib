@@ -327,7 +327,6 @@ function sendMessage(params,
     fccFolder.indexOf("nocopy://") == 0
     ? ""
     : fccFolder;
-  let implies = function (a, b) !a || a && b;
   // Replicating the whole logic from nsMsgSend.cpp:2840... with our own archive
   // feat.
   if (archive) {
@@ -349,7 +348,7 @@ function sendMessage(params,
     // The user has unchecked "place a copy of the sent message..."
     fields.fcc = "";
   } else if (isReply && (fccSameFolder ||
-      implies(options.fcc_follows_if_not_inbox, !msgHdrIsInbox(msgUriToMsgHdr(urls[0]))))) {
+      options.fcc_follows_if_not_inbox && !msgHdrIsInbox(msgUriToMsgHdr(urls[0])))) {
     // "Place a copy of sent messages in the folder of the message being replied
     // to..."
     let msgHdr = msgUriToMsgHdr(urls[0]);
