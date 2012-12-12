@@ -165,6 +165,9 @@ function dateAsInMessageList(aDate) {
     aDate.getHours(), aDate.getMinutes(), aDate.getSeconds());
 }
 
+
+const RE_SANITIZE = /[\u0000-\u0008\u000b-\u000c\u000e-\u001f]/g;
+
 /**
  * Helper function to escape some XML chars, so they display properly in
  *  innerHTML.
@@ -182,7 +185,7 @@ function escapeHtml(s) {
         default: throw Error("Unexpected match");
       }
     }
-  );
+  ).replace(RE_SANITIZE, "");
 }
 
 /**
