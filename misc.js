@@ -133,6 +133,7 @@ let gIdentities = {};
  *  list?
  */
 function fillIdentities(aSkipNntp) {
+  let firstNonNull = null;
   for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
     let server = account.incomingServer;
     if (aSkipNntp && (!server || server.type != "pop3" && server.type != "imap"))
@@ -141,10 +142,15 @@ function fillIdentities(aSkipNntp) {
       // We're only interested in identities that have a real email.
       if (id.email) {
         gIdentities[id.email.toLowerCase()] = id;
+        if (!firstNonNull) {
+          firstNonNull = id;
+        }
       }
     }
   }
-  gIdentities["default"] = MailServices.accounts.defaultAccount.defaultIdentity;
+  gIdentities["default"] =
+    MailServices.accounts.defaultAccount.defaultIdentity ||
+    firstNonNull;
 }
 
 /**
