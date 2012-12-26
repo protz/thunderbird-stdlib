@@ -127,8 +127,9 @@ let gIdentities = {};
  * This function you should call to populate the gIdentities global object. The
  *  recommended time to call this is after the mail-startup-done event, although
  *  doing this at overlay load-time seems to be fine as well.
- * Beware, although gIdentities has a "default" key, it is not guaranteed to be
- *  non-null.
+ * There is a "default" key, that we guarantee to be non-null, by picking the
+ *  first account's first valid identity if the default account doesn't have any
+ *  valid identity associated.
  * @param aSkipNntp (optional) Should we avoid including nntp identities in the
  *  list?
  */
