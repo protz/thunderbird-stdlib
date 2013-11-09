@@ -161,8 +161,13 @@ function fillIdentities(aSkipNntp) {
  * @return {String} a string containing the formatted date
  */
 function dateAsInMessageList(aDate) {
-  // Is it today? (Less stupid tests are welcome!)
-  let format = aDate.toLocaleDateString("%x") == (new Date()).toLocaleDateString("%x")
+  let now = new Date();
+  // Is it today?
+  let isToday =
+    now.getFullYear() == aDate.getFullYear() &&
+    now.getMonth() == aDate.getMonth() &&
+    now.getDate() == aDate.getDate();
+  let format = isToday
     ? Ci.nsIScriptableDateFormat.dateFormatNone
     : Ci.nsIScriptableDateFormat.dateFormatShort;
   // That is an ugly XPCOM call!
