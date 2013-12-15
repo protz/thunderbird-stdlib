@@ -242,7 +242,7 @@ function sendMessage(params,
   //  properly set before assembling the message.
   let fields = Cc["@mozilla.org/messengercompose/composefields;1"]
                   .createInstance(Ci.nsIMsgCompFields);
-  fields.from = MailServices.headerParser.makeFullAddress(identity.fullName, identity.email);
+  fields.from = MailServices.headerParser.makeMimeAddress(identity.fullName, identity.email);
   fields.to = to;
   if ("cc" in params)
     fields.cc = params.cc;
