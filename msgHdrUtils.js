@@ -54,9 +54,11 @@ var EXPORTED_SYMBOLS = [
   'getMail3Pane',
   // Higher-level functions
   'msgHdrGetHeaders',
+  // Modify messages, raw.
+  'msgHdrsModifyRaw',
 ]
 
-  const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 // from mailnews/base/public/nsMsgFolderFlags.idl
 const nsMsgFolderFlags_SentMail = 0x00000200;
@@ -64,11 +66,16 @@ const nsMsgFolderFlags_Drafts   = 0x00000400;
 const nsMsgFolderFlags_Archive  = 0x00004000;
 const nsMsgFolderFlags_Inbox    = 0x00001000;
 
+const PR_WRONLY = 0x02;
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
 Cu.import("resource:///modules/gloda/mimemsg.js");
 Cu.import("resource:///modules/gloda/utils.js");
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource:///modules/mailServices.js");
+
+XPCOMUtils.importRelative(this, "misc.js");
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
 XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
@@ -145,20 +152,20 @@ function msgHdrFromNeckoUrl(aUrl)
  * @return {string}
  */
 function msgHdrToMessageBody(aMessageHeader, aStripHtml, aLength) {
-  let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);  
-  let listener = Cc["@mozilla.org/network/sync-stream-listener;1"].createInstance(Ci.nsISyncStreamListener);  
-  let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);  
-  messenger.messageServiceFromURI(uri).streamMessage(uri, listener, null, null, false, "");  
-  let folder = aMessageHeader.folder;  
+  let messenger = Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
+  let listener = Cc["@mozilla.org/network/sync-stream-listener;1"].createInstance(Ci.nsISyncStreamListener);
+  let uri = aMessageHeader.folder.getUriForMsg(aMessageHeader);
+  messenger.messageServiceFromURI(uri).streamMessage(uri, listener, null, null, false, "");
+  let folder = aMessageHeader.folder;
   /*
    * AUTF8String getMsgTextFromStream(in nsIInputStream aStream, in ACString aCharset,
-                                      in unsigned long aBytesToRead, in unsigned long aMaxOutputLen, 
+                                      in unsigned long aBytesToRead, in unsigned long aMaxOutputLen,
                                       in boolean aCompressQuotes, in boolean aStripHTMLTags,
                                       out ACString aContentType);
   */
   return folder.getMsgTextFromStream(
-    listener.inputStream, aMessageHeader.Charset, 2*aLength, aLength, false, aStripHtml, { });  
-}  
+    listener.inputStream, aMessageHeader.Charset, 2*aLength, aLength, false, aStripHtml, { });
+}
 
 /**
  * Get a nsIURI from a nsIMsgDBHdr
@@ -354,7 +361,11 @@ function createStreamListener(k) {
     onStartRequest: function(aRequest, aContext) {
     },
     onStopRequest: function(aRequest, aContext, aStatusCode) {
-      k(this._data);
+      try {
+        k(this._data);
+      } catch (e) {
+        dump("Error inside stream listener:\n"+e+"\n");
+      }
     },
 
     // nsIStreamListener
@@ -412,5 +423,88 @@ function msgHdrGetHeaders(aMsgHdr, k) {
     }
   } else {
     fallback();
+  }
+}
+
+/**
+ * @param aMsgHdrs The messages to modify
+ * @param aTransformer A function which takes the input data, modifies it, and
+ * returns the corresponding data. This is the _raw_ contents of the message.
+ */
+function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
+  let toCopy = [];
+  let toDelete = [];
+  let copyNext = function () {
+    dump("msgHdrModifyRaw: copying next\n");
+    let obj = toCopy.pop();
+    if (!obj) {
+      msgHdrsDelete(toDelete);
+      return;
+    }
+
+    let { msgHdr, tempFile } = obj;
+
+    MailServices.copy.CopyFileMessage(
+      tempFile,
+      msgHdr.folder,
+      null,
+      false,
+      msgHdr.flags,
+      msgHdr.getStringProperty("keywords"),
+      {
+        QueryInterface: XPCOMUtils.generateQI([Ci.nsIMsgCopyServiceListener]),
+
+        OnStartCopy: function () {
+        },
+        OnProgress: function (aProgress, aProgressMax) {
+        },
+        SetMessageKey: function (aKey) {
+        },
+        GetMessageId: function (aMessageId) {
+        },
+        OnStopCopy: function (aStatus) {
+          if (NS_SUCCEEDED(aStatus)) {
+            dump("msgHdrModifyRaw: copied successfully\n");
+            toDelete.push(msgHdr);
+            tempFile.remove(false);
+          }
+          copyNext();
+        }
+      },
+      null
+    );
+  };
+
+  let count = aMsgHdrs.length;
+  let tick = function () {
+    if (--count == 0)
+      copyNext();
+  }
+
+  for each (let [, aMsgHdr] in Iterator(aMsgHdrs)) {
+    let msgHdr = aMsgHdr;
+    let uri = msgHdrGetUri(msgHdr);
+    let messageService = MailServices.messenger.messageServiceFromURI(uri);
+    messageService.streamMessage(uri, createStreamListener(function (aRawString) {
+      let data = aTransformer(aRawString);
+      if (!data) {
+        dump("msgHdrModifyRaw: no data, aborting\n");
+        return;
+      }
+
+      let tempFile = Services.dirsvc.get("TmpD", Ci.nsIFile);
+      tempFile.append("rethread.eml");
+      tempFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("0600", 8));
+
+      let stream = Cc["@mozilla.org/network/file-output-stream;1"]
+        .createInstance(Ci.nsIFileOutputStream);
+      stream.init(tempFile, PR_WRONLY, parseInt("0600", 8), 0);
+      stream.write(data, data.length);
+      stream.close();
+
+      dump("msgHdrModifyRaw: wrote to file\n");
+      toCopy.push({ tempFile: tempFile, msgHdr: msgHdr });
+      tick();
+    }), null, null, false, "");
   }
 }
