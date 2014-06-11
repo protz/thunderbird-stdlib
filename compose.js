@@ -290,6 +290,8 @@ function plainTextToHtml(txt) {
 }
 
 function parse(aMimeLine) {
+  if (!aMimeLine)
+    return [[], []];
   let emails = {};
   let fullNames = {};
   let names = {};

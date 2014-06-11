@@ -215,6 +215,10 @@ function escapeHtml(s) {
  * @return {Array} a list of { email, name } objects
  */
 function parseMimeLine (aMimeLine, aDontFix) {
+  if (aMimeLine == null) {
+    Log.debug("Empty aMimeLine?!!");
+    return [];
+  }
   let emails = {};
   let fullNames = {};
   let names = {};
