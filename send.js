@@ -106,35 +106,17 @@ function wrapBody(t) {
  */
 function FakeEditor (aIframe) {
   this.iframe = aIframe;
+  this.editor = getEditorForIframe(aIframe);
+  this.editor.QueryInterface(Ci.nsIEditorMailSupport);
 }
 
 FakeEditor.prototype = {
   getEmbeddedObjects: function _FakeEditor_getEmbeddedObjects () {
-    try {
-      let objects = Cc["@mozilla.org/supports-array;1"]
-                      .createInstance(Ci.nsISupportsArray);
-      for each (let [, o] in Iterator(this.iframe.contentDocument.getElementsByTagName("img")))
-        objects.AppendElement(o, false);
-      return objects;
-    } catch (e) {
-      Log.error(e);
-      dumpCallStack(e);
-    }
+    return this.editor.getEmbeddedObjects();
   },
 
   outputToString: function _FakeEditor_outputToString (formatType, flags) {
-    Log.debug("Returning mail body for", formatType);
-    let html = this.iframe.contentDocument.body.innerHTML;
-    switch (formatType) {
-      case "text/plain":
-        return htmlToPlainText(html)+"\n";
-
-      case "text/html":
-        return wrapBody(html);
-
-      default:
-        Log.error("Unexpected formatType", formatType, flags);
-    }
+    return this.editor.outputToString(formatType, flags);
   },
 
   // bodyConvertible calls GetRootElement on m_editor which is supposed to be an
