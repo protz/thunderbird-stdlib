@@ -41,7 +41,7 @@
  */
 
 var EXPORTED_SYMBOLS = [
-  'quoteMsgHdrIntoIframe', 'getEditorForIframe',
+  'composeInIframe', 'getEditorForIframe',
   'quoteMsgHdr', 'citeString',
   'htmlToPlainText', 'simpleWrap',
   'plainTextToHtml', 'replyAllParams',
@@ -139,19 +139,25 @@ function getEditorForIframe(aIframe) {
   return s.getEditorForWindow(w);
 }
 
-function quoteMsgHdrIntoIframe(aMsgHdr, aIframe) {
+function composeInIframe(aIframe, {
+    msgHdr,
+    compType,
+    identity,
+  }) {
   let fields = Cc["@mozilla.org/messengercompose/composefields;1"]
                   .createInstance(Ci.nsIMsgCompFields);
   let params = Cc["@mozilla.org/messengercompose/composeparams;1"]
                   .createInstance(Ci.nsIMsgComposeParams);
-  params.origMsgHdr = aMsgHdr;
-  params.identity =
-    getMail3Pane().getIdentityForHeader(aMsgHdr, Ci.nsIMsgCompType.Reply) || gIdentities.default;
-  params.originalMsgURI = msgHdrGetUri(aMsgHdr);
+  params.identity = identity;
+  if (msgHdr) {
+    params.origMsgHdr = msgHdr;
+    params.originalMsgURI = msgHdrGetUri(msgHdr);
+  }
   params.composeFields = fields;
-  params.type = Ci.nsIMsgCompType.Reply;
+  params.type = compType;
 
   let compose = MailServices.compose.initCompose(params, getMail3Pane(), aIframe.docShell);
+  Log.debug("editor", getEditorForIframe(aIframe), "iframe", aIframe);
   compose.initEditor(getEditorForIframe(aIframe), aIframe.contentWindow);
 }
 
