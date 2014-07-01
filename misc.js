@@ -54,6 +54,8 @@ var EXPORTED_SYMBOLS = [
   'encodeUrlParameters', 'decodeUrlParameters',
   // Character set helpers
   'systemCharset',
+  // Platform-specific idioms
+  'isOSX', 'isWindows', 'isAccel'
 ]
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
@@ -69,6 +71,11 @@ XPCOMUtils.defineLazyServiceGetter(MailServices, "i18nDateFormatter",
 XPCOMUtils.importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
+
+let isOSX = ("nsILocalFileMac" in Ci);
+let isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
+
+function isAccel (event) (isOSX && event.metaKey || event.ctrlKey)
 
 /**
  * Low-level XPCOM-style macro. You might need this for the composition and
