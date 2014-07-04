@@ -440,7 +440,7 @@ function sendMessage(params,
         gMsgCompose = initCompose(
           MailServices.compose,
           params,
-          iframe.contentWindow,
+          null, // XXX put a real window here to see the notification window
           iframe.contentWindow.docshell
         );
         // Here we trust the parameters that have been set by the call to
