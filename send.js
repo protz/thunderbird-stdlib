@@ -207,7 +207,7 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
  *  even copy it to the Sent folder. Warning: this one assumes that the "right"
  *  Archives folder already exists.
  */
-function sendMessage(params,
+function sendMessage(aParams,
     { deliverType, compType },
     aBody,
     { progressListener, sendListener, stateListener },
@@ -216,8 +216,8 @@ function sendMessage(params,
   let popOut = options && options.popOut;
   let archive = options && options.archive;
 
-  let { urls, identity, to, subject } = params;
-  let attachments = params.attachments || [];
+  let { urls, identity, to, subject } = aParams;
+  let attachments = aParams.attachments || [];
 
   // Here is the part where we do all the stuff related to filling proper
   //  headers, adding references, making sure all the composition fields are
@@ -226,24 +226,24 @@ function sendMessage(params,
                   .createInstance(Ci.nsIMsgCompFields);
   fields.from = MailServices.headerParser.makeMimeAddress(identity.fullName, identity.email);
   fields.to = to;
-  if ("cc" in params)
-    fields.cc = params.cc;
-  if ("bcc" in params)
-    fields.bcc = params.bcc;
+  if ("cc" in aParams)
+    fields.cc = aParams.cc;
+  if ("bcc" in aParams)
+    fields.bcc = aParams.bcc;
   fields.subject = subject;
-  fields.returnReceipt = ("returnReceipt" in params)
-    ? params.returnReceipt
+  fields.returnReceipt = ("returnReceipt" in aParams)
+    ? aParams.returnReceipt
     : identity.requestReturnReceipt;
-  fields.receiptHeaderType = ("receiptType" in params)
-    ? params.receiptType
+  fields.receiptHeaderType = ("receiptType" in aParams)
+    ? aParams.receiptType
     : identity.receiptHeaderType;
-  fields.DSN = ("requestDsn" in params)
-    ? params.requestDsn
+  fields.DSN = ("requestDsn" in aParams)
+    ? aParams.requestDsn
     : identity.requestDSN;
-  if ("securityInfo" in params)
-    fields.securityInfo = params.securityInfo;
-  if ("otherRandomHeaders" in params)
-    fields.otherRandomHeaders = params.otherRandomHeaders;
+  if ("securityInfo" in aParams)
+    fields.securityInfo = aParams.securityInfo;
+  if ("otherRandomHeaders" in aParams)
+    fields.otherRandomHeaders = aParams.otherRandomHeaders;
 
   let references = [];
   switch (compType) {
