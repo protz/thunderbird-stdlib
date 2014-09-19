@@ -446,8 +446,14 @@ function sendMessage(params,
         // Here we trust the parameters that have been set by the call to
         // msgComposeService.InitCompose above, and we just assume the
         // fakeEditor will be able to output HTML and plainText as needed...
-        let fakeEditor = new FakeEditor(iframe);
-        gMsgCompose.initEditor(fakeEditor, iframe.contentWindow);
+        try {
+          let fakeEditor = new FakeEditor(iframe);
+          gMsgCompose.initEditor(fakeEditor, iframe.contentWindow);
+        } catch (e) {
+          // Recent Thunderbirds only.
+          Log.debug(e);
+          gMsgCompose.editor = getEditorForIframe(iframe);
+        }
         let convertibility = gMsgCompose.bodyConvertible();
         Log.debug("This message might be convertible:", convertibility);
         switch (convertibility) {
