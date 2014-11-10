@@ -43,7 +43,7 @@
 
 var EXPORTED_SYMBOLS = [
   // Identity management helpers
-  'gIdentities', 'fillIdentities', 'getIdentities',
+  'gIdentities', 'fillIdentities', 'getIdentities', 'getDefaultIdentity',
   // JS programming helpers
   'range', 'MixIn', 'combine',
   // XPCOM helpers
@@ -169,8 +169,16 @@ function fillIdentities(aSkipNntp) {
 }
 
 /**
+ * Returns the default identity in the form { boolean isDefault; nsIMsgIdentity identity }
+ */
+function getDefaultIdentity() {
+  return getIdentities().find(function (x) x.isDefault);
+}
+
+/**
  * Returns a list of all identities in the form [{ boolean isDefault; nsIMsgIdentity identity }].
  * It is assured that there is exactly one default identity.
+ * If only the default identity is needed, getDefaultIdentity() can be used.
  * @param aSkipNntpIdentities (default: true) Should we avoid including nntp identities in the list?
  */
 function getIdentities(aSkipNntpIdentities = true) {
