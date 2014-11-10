@@ -43,7 +43,7 @@
 
 var EXPORTED_SYMBOLS = [
   // Identity management helpers
-  'gIdentities', 'fillIdentities',
+  'gIdentities', 'fillIdentities', 'getIdentities',
   // JS programming helpers
   'range', 'MixIn', 'combine',
   // XPCOM helpers
@@ -166,6 +166,44 @@ function fillIdentities(aSkipNntp) {
   gIdentities["default"] =
     MailServices.accounts.defaultAccount.defaultIdentity ||
     firstNonNull;
+}
+
+/**
+ * Returns a list of all identities in the form [{ boolean isDefault; nsIMsgIdentity identity }].
+ * It is assured that there is exactly one default identity.
+ * @param aSkipNntpIdentities (default: true) Should we avoid including nntp identities in the list?
+ */
+function getIdentities(aSkipNntpIdentities = true) {
+  let identities = [];
+  let foundDefaultKey = false;
+  for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
+    let server = account.incomingServer;
+    if (aSkipNntpIdentities && (!server || server.type != "pop3" && server.type != "imap")) {
+      Log.debug("Skipping: ", server.prettyName);
+      continue;
+    }
+    for each (let currentIdentity in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
+      // We're only interested in identities that have a real email.
+      if (currentIdentity.email) {
+        let def = false;
+        if (!foundDefaultKey && currentIdentity == MailServices.accounts.defaultAccount.defaultIdentity) {
+          def = true;
+          foundDefaultKey = true;
+        }
+        identities.push({ isDefault: def, identity: currentIdentity });
+      }
+    }
+  }
+  if (identities.length == 0) {
+    Log.warn("Didn't find any identities!");
+  }
+  else {
+    if (!foundDefaultKey) {
+      Log.warn("Didn't find any default key - mark the first identity as default!");
+      identities[0].isDefault = true;
+    }
+  }
+  return identities;
 }
 
 /**
