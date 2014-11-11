@@ -143,29 +143,23 @@ let gIdentities = {};
  *  valid identity associated.
  * @param aSkipNntp (optional) Should we avoid including nntp identities in the
  *  list?
+ * @deprecated Use getIdenties() instead
  */
 function fillIdentities(aSkipNntp) {
+  Log.warn("fillIdentities is deprecated! Use getIdentities instead!");
   Log.debug("Filling identities with skipnntp = ", aSkipNntp);
-  let firstNonNull = null;
-  for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
-    let server = account.incomingServer;
-    if (aSkipNntp && (!server || server.type != "pop3" && server.type != "imap")) {
-      Log.debug("Skipping: ", server.prettyName);
-      continue;
-    }
-    for each (let id in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
-      // We're only interested in identities that have a real email.
-      if (id.email) {
-        gIdentities[id.email.toLowerCase()] = id;
-        if (!firstNonNull) {
-          firstNonNull = id;
-        }
-      }
+
+  gIdentities = {};
+  for each (let currentIdentity in gIdentities) {
+    gIdentities[currentIdentity.identity.email] = currentIdentity.identity;
+    if (currentIdentity.isDefault) {
+      gIdentities["default"] = currentIdentity.identity;
     }
   }
-  gIdentities["default"] =
-    MailServices.accounts.defaultAccount.defaultIdentity ||
-    firstNonNull;
+
+  if(!("default" in gIdentities)) {
+    gIdentities["default"] = getIdentities()[0].identity;
+  }
 }
 
 /**
