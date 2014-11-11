@@ -150,7 +150,7 @@ function fillIdentities(aSkipNntp) {
   Log.debug("Filling identities with skipnntp = ", aSkipNntp);
 
   gIdentities = {};
-  for each (let currentIdentity in gIdentities) {
+  for each (let currentIdentity in getIdentities(aSkipNntp)) {
     gIdentities[currentIdentity.identity.email] = currentIdentity.identity;
     if (currentIdentity.isDefault) {
       gIdentities["default"] = currentIdentity.identity;
