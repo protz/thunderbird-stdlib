@@ -183,7 +183,6 @@ function getDefaultIdentity() {
  */
 function getIdentities(aSkipNntpIdentities = true) {
   let identities = [];
-  let foundDefaultKey = false;
   for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
     let server = account.incomingServer;
     if (aSkipNntpIdentities && (!server || server.type != "pop3" && server.type != "imap")) {
@@ -193,12 +192,7 @@ function getIdentities(aSkipNntpIdentities = true) {
     for each (let currentIdentity in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
       // We're only interested in identities that have a real email.
       if (currentIdentity.email) {
-        let def = false;
-        if (!foundDefaultKey && currentIdentity == MailServices.accounts.defaultAccount.defaultIdentity) {
-          def = true;
-          foundDefaultKey = true;
-        }
-        identities.push({ isDefault: def, identity: currentIdentity });
+        identities.push({ isDefault: (currentIdentity == MailServices.accounts.defaultAccount.defaultIdentity), identity: currentIdentity });
       }
     }
   }
@@ -206,7 +200,7 @@ function getIdentities(aSkipNntpIdentities = true) {
     Log.warn("Didn't find any identities!");
   }
   else {
-    if (!foundDefaultKey) {
+    if (!identities.some(function (x) x.isDefault)) {
       Log.warn("Didn't find any default key - mark the first identity as default!");
       identities[0].isDefault = true;
     }
