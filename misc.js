@@ -185,6 +185,7 @@ function getIdentities(aSkipNntpIdentities = true) {
     for each (let currentIdentity in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
       // We're only interested in identities that have a real email.
       if (currentIdentity.email) {
+        currentIdentity.email = currentIdentity.email.toLowerCase();
         identities.push({ isDefault: (currentIdentity == MailServices.accounts.defaultAccount.defaultIdentity), identity: currentIdentity });
       }
     }
