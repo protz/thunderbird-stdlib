@@ -171,6 +171,8 @@ function getDefaultIdentity() {
 /**
  * Returns a list of all identities in the form [{ boolean isDefault; nsIMsgIdentity identity }].
  * It is assured that there is exactly one default identity.
+ * All email addresses of the returned identities are in lower case,
+ *   so for comparison getIdentity[0].identity.email == someEmail.toLowerCase() can be used.
  * If only the default identity is needed, getDefaultIdentity() can be used.
  * @param aSkipNntpIdentities (default: true) Should we avoid including nntp identities in the list?
  */
