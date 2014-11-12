@@ -352,13 +352,8 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   let to = [], cc = [], bcc = [];
 
   let isReplyToOwnMsg = false;
-  for each (let [i, identity] in Iterator(gIdentities)) {
-    // It happens that gIdentities.default is null!
-    if (!identity) {
-      Log.debug("This identity is null, pretty weird...");
-      continue;
-    }
-    let email = identity.email.toLowerCase();
+  for each (let currentIdentity in gIdentities) {
+    let email = currentIdentity.identity.email.toLowerCase();
     if (email == authorEmailAddress)
       isReplyToOwnMsg = true;
     if (recipientsEmailAddresses.some(function (x) x == email))
@@ -429,7 +424,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
  */
 function determineComposeHtml(aIdentity) {
   if (!aIdentity)
-    aIdentity = gIdentities.default;
+    aIdentity = getDefaultIdentity();
 
   if (aIdentity) {
     return (aIdentity.composeHtml == Ci.nsIMsgCompFormat.HTML);
