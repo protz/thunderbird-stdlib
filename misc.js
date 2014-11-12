@@ -181,7 +181,6 @@ function getIdentities(aSkipNntpIdentities = true) {
   for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
     let server = account.incomingServer;
     if (aSkipNntpIdentities && (!server || server.type != "pop3" && server.type != "imap")) {
-      Log.debug("Skipping: ", server.prettyName);
       continue;
     }
     for each (let currentIdentity in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
