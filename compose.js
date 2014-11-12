@@ -352,7 +352,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   let to = [], cc = [], bcc = [];
 
   let isReplyToOwnMsg = false;
-  for each (let currentIdentity in gIdentities) {
+  for each (let currentIdentity in getIdentities()) {
     let email = currentIdentity.identity.email.toLowerCase();
     if (email == authorEmailAddress)
       isReplyToOwnMsg = true;
