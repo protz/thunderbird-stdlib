@@ -149,7 +149,6 @@ function fillIdentities(aSkipNntp) {
   Log.warn("fillIdentities is deprecated! Use getIdentities instead!");
   Log.debug("Filling identities with skipnntp = ", aSkipNntp);
 
-  gIdentities = {};
   for each (let currentIdentity in getIdentities(aSkipNntp)) {
     gIdentities[currentIdentity.identity.email] = currentIdentity.identity;
     if (currentIdentity.isDefault) {
