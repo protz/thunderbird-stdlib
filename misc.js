@@ -43,7 +43,7 @@
 
 var EXPORTED_SYMBOLS = [
   // Identity management helpers
-  'gIdentities', 'fillIdentities', 'getIdentities', 'getDefaultIdentity',
+  'gIdentities', 'fillIdentities', 'getIdentities', 'getDefaultIdentity', 'getIdentityForEmail',
   // JS programming helpers
   'range', 'MixIn', 'combine',
   // XPCOM helpers
@@ -198,6 +198,15 @@ function getIdentities(aSkipNntpIdentities = true) {
     }
   }
   return identities;
+}
+
+/*
+ * Searches a given email address in all identities and returns the corresponding identity.
+ * @param {String} anEmailAddress Email address to be searched in the identities
+ * @returns {{Boolean} isDefault, {{nsIMsgIdentity} identity} if found, otherwise undefined
+ */
+function getIdentityForEmail(anEmailAddress) {
+  return getIdentities(false).find(function (ident) ident.identity.email.toLowerCase() == anEmailAddress.toLowerCase());
 }
 
 /**
