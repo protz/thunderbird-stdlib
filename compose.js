@@ -424,7 +424,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
  */
 function determineComposeHtml(aIdentity) {
   if (!aIdentity)
-    aIdentity = getDefaultIdentity();
+    aIdentity = getDefaultIdentity().identity;
 
   if (aIdentity) {
     return (aIdentity.composeHtml == Ci.nsIMsgCompFormat.HTML);
