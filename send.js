@@ -179,7 +179,6 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
  * @param composeParameters.receiptType (optional)
  * @param composeParameters.requestDsn (optional)
  * @param composeParameters.securityInfo (optional)
- * @param composeParameters.otherRandomHeaders (optional)
  *
  * @param sendingParameters
  * @param sendingParameters.deliverType See Ci.nsIMsgCompDeliverMode
@@ -242,8 +241,6 @@ function sendMessage(aParams,
     : identity.requestDSN;
   if ("securityInfo" in aParams)
     fields.securityInfo = aParams.securityInfo;
-  if ("otherRandomHeaders" in aParams)
-    fields.otherRandomHeaders = aParams.otherRandomHeaders;
 
   let references = [];
   switch (compType) {
