@@ -385,16 +385,16 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
     let hashMap = {};
     for each (let [name, email] in to)
       hashMap[email] = null;
-    cc = cc.filter(function ([name, email])
-      let (r = (email in hashMap))
-      (hashMap[email] = null,
-      !r)
-    );
-    bcc = bcc.filter(function ([name, email])
-      let (r = (email in hashMap))
-      (hashMap[email] = null,
-      !r)
-    );
+    cc = cc.filter(function ([name, email]) {
+      let r = (email in hashMap);
+      hashMap[email] = null;
+      return !r
+    });
+    bcc = bcc.filter(function ([name, email]) {
+      let r = (email in hashMap);
+      hashMap[email] = null;
+      return !r
+    });
     k({ to: to, cc: cc, bcc: bcc });
   }
 
