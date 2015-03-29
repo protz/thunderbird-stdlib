@@ -253,7 +253,7 @@ function sendMessage(aParams,
       Log.assert(urls.length == 1, "Can't edit more than one message at a time");
       let msgHdr = msgUriToMsgHdr(urls[0]);
       references = [msgHdr.getStringReference(i)
-        for each (i in range(0, msgHdr.numReferences))];
+        for (i of range(0, msgHdr.numReferences))];
       break;
     }
 
@@ -267,7 +267,7 @@ function sendMessage(aParams,
       Log.assert(urls.length == 1, "Can't reply to more than one message at a time");
       let msgHdr = msgUriToMsgHdr(urls[0]);
       references = [msgHdr.getStringReference(i)
-        for each (i in range(0, msgHdr.numReferences))];
+        for (i of range(0, msgHdr.numReferences))];
       references.push(msgHdr.messageId);
       break;
     }

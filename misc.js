@@ -101,9 +101,9 @@ function NS_SUCCEEDED(v) {
  * Python-style range function to use in list comprehensions.
  *  @param {Number} begin 
  *  @param {Number} end 
- *  @return {Iterator} An iterator that yields from begin to end - 1.
+ *  @return {Generator} An iterator that yields from begin to end - 1.
  */
-function range(begin, end) {
+function* range(begin, end) {
   for (let i = begin; i < end; ++i) {
     yield i;
   }
@@ -276,7 +276,7 @@ function parseMimeLine (aMimeLine, aDontFix) {
                                                                      fullNames);
   if (numAddresses)
     return [{ email: emails.value[i], name: names.value[i], fullName: fullNames.value[i] }
-      for each (i in range(0, numAddresses))];
+      for (i of range(0, numAddresses))];
   else if (aDontFix)
     return [];
   else
@@ -351,5 +351,5 @@ function systemCharset() {
 function combine(a1, a2) {
   if (a1.length != a2.length)
     throw new Error("combine: the given arrays have different lengths");
-  return [[a1[i], a2[i]] for each (i in range(0, a1.length))];
+  return [[a1[i], a2[i]] for (i of range(0, a1.length))];
 }
