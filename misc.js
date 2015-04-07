@@ -45,7 +45,7 @@ var EXPORTED_SYMBOLS = [
   // Identity management helpers
   'gIdentities', 'fillIdentities', 'getIdentities', 'getDefaultIdentity', 'getIdentityForEmail',
   // JS programming helpers
-  'range', 'MixIn', 'combine',
+  'range', 'MixIn', 'combine', 'entries',
   // XPCOM helpers
   'NS_FAILED', 'NS_SUCCEEDED',
   // Various formatting helpers
@@ -107,6 +107,17 @@ function* range(begin, end) {
   for (let i = begin; i < end; ++i) {
     yield i;
   }
+}
+
+/**
+ * Helper function to simplify iteration over key/value store objects.
+ * From https://esdiscuss.org/topic/es6-iteration-over-object-values
+ * @param {Object} anObject
+ */
+function* entries(anObject) {
+   for (let key of Object.keys(anObject)) {
+     yield [key, anObject[key]];
+   }
 }
 
 /**
