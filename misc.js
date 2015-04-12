@@ -49,7 +49,7 @@ var EXPORTED_SYMBOLS = [
   // XPCOM helpers
   'NS_FAILED', 'NS_SUCCEEDED',
   // Various formatting helpers
-  'dateAsInMessageList', 'escapeHtml', 'parseMimeLine',
+  'dateAsInMessageList', 'escapeHtml', 'sanitize', 'parseMimeLine',
   // Useful for web content
   'encodeUrlParameters', 'decodeUrlParameters',
   // Character set helpers
@@ -247,6 +247,16 @@ function dateAsInMessageList(aDate) {
 const RE_SANITIZE = /[\u0000-\u0008\u000b-\u000c\u000e-\u001f]/g;
 
 /**
+ * Helper function to remove non-printable characters from a string -- injecting
+ * these in an XML or XHTML document would cause an error.
+ * @param {String} s input text
+ * @param {String} The sanitized string.
+ */
+function sanitize(s) {
+  return (s || "").replace(RE_SANITIZE, "");
+}
+
+/**
  * Helper function to escape some XML chars, so they display properly in
  *  innerHTML.
  * @param {String} s input text
@@ -255,7 +265,7 @@ const RE_SANITIZE = /[\u0000-\u0008\u000b-\u000c\u000e-\u001f]/g;
 function escapeHtml(s) {
   s += "";
   // stolen from selectionsummaries.js (thanks davida!)
-  return s.replace(/[<>&]/g, function(s) {
+  return sanitize(s.replace(/[<>&]/g, function(s) {
       switch (s) {
         case "<": return "&lt;";
         case ">": return "&gt;";
@@ -263,7 +273,7 @@ function escapeHtml(s) {
         default: throw Error("Unexpected match");
       }
     }
-  ).replace(RE_SANITIZE, "");
+  ));
 }
 
 /**
