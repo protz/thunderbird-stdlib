@@ -175,7 +175,7 @@ monkeyPatchWindowObserver.prototype = {
   observe: function (aSubject, aTopic, aData) {
     if (aTopic == "domwindowopened") {
       aSubject.QueryInterface(Ci.nsIDOMWindow);
-      for each (let aMenuItem in _menuItems)
+      for (let aMenuItem of _menuItems)
         monkeyPatchWindow(aSubject.window, false, aMenuItem);
     }
   },
@@ -213,7 +213,7 @@ var RestartlessMenuItems = {
       _menuItems.push(options);
 
       // Patch all existing windows
-      for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane"), Ci.nsIDOMWindow)) {
+      for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane"), Ci.nsIDOMWindow)) {
         // True means the window's been loaded already, so add the menu item right
         // away (the default is: wait for the "load" event).
         monkeyPatchWindow(w.window, true, options);
@@ -239,7 +239,7 @@ var RestartlessMenuItems = {
       
       // Un-patch all existing windows
       if (found)
-        for each (let w in fixIterator(Services.wm.getEnumerator("mail:3pane")))
+        for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane")))
           unMonkeyPatchWindow(w, _menuItems[index]);
 
       if (!keepArray) {
@@ -257,7 +257,7 @@ var RestartlessMenuItems = {
   removeAll: function _RestartlessMenuItems_removeAll () {
     if (isThunderbird()) {
       // Remove all added menuitems
-      for each (let aMenuItem in _menuItems)
+      for (let aMenuItem of _menuItems)
         this.remove(aMenuItem, true);
       _menuItems = [];
       monkeyPatchFutureWindow.unregister();

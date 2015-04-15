@@ -63,9 +63,9 @@ function test_sync_api () {
     r = yield ss.set("myKey", o);
     do_check_false(r); // Value was updated in-place
     r = yield ss.get("myKey");
-    for each (key in Object.keys(r))
+    for (key of Object.keys(r))
       do_check_true(r[key] == o[key]);
-    for each (key in Object.keys(o))
+    for (key of Object.keys(o))
       do_check_true(r[key] == o[key]);
 
     // Test nested async actions. Not recommended for the casual user because of
