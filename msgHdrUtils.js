@@ -218,7 +218,7 @@ function msgHdrSetTags (aMsgHdr, aTags) {
   for (let tag of newTagList)
     newTags[tag.key] = null;
 
-  let toAdd = newTagList.map(x => x.key);
+  let toAdd = newTagList.filter(x => !(x.key in oldTags)).map(x => x.key);
   let toRemove = oldTagList.filter(x => !(x.key in newTags)).map(x => x.key);
 
   let folder = aMsgHdr.folder;
