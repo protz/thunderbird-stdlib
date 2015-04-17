@@ -273,7 +273,7 @@ function sendMessage(aParams,
     }
 
     case mCompType.ForwardAsAttachment: {
-      for each (let [, url] in Iterator(urls)) {
+      for (let url of urls) {
         let msgHdr = msgUriToMsgHdr(url);
         references.push(msgHdr.messageId);
       }
@@ -287,9 +287,9 @@ function sendMessage(aParams,
       break;
     }
   }
-  references = ["<"+x+">" for each ([, x] in Iterator(references))];
+  references = ["<"+x+">" for (x of references)];
   fields.references = references.join(" ");
-  [fields.addAttachment(x) for each ([, x] in Iterator(attachments))];
+  [fields.addAttachment(x) for (x of attachments)];
 
   let fccFolder = identity.fccFolder;
   let fccSameFolder = identity.fccReplyFollowsParent;

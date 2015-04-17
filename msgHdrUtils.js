@@ -192,17 +192,12 @@ function msgHdrGetTags (aMsgHdr) {
   let keywords = aMsgHdr.getStringProperty("keywords");
   let keywordList = keywords.split(' ');
   let keywordMap = {};
-  for (let [, keyword] in Iterator(keywordList)) {
+  for (let keyword of keywordList) {
     keywordMap[keyword] = true;
   }
 
   let tagArray = MailServices.tags.getAllTags({});
-  let tags = [];
-  for (let [iTag, tag] in Iterator(tagArray)) {
-    let tag = tagArray[iTag];
-    if (tag.key in keywordMap)
-      tags.push(tag);
-  }
+  let tags = tagArray.filter(tag => tag.key in keywordMap);
   return tags;
 }
 
@@ -215,18 +210,16 @@ function msgHdrGetTags (aMsgHdr) {
 function msgHdrSetTags (aMsgHdr, aTags) {
   let oldTagList = msgHdrGetTags(aMsgHdr);
   let oldTags = {}; // hashmap
-  for each (let [, tag] in Iterator(oldTagList))
+  for (let tag of oldTagList)
     oldTags[tag.key] = null;
 
   let newTags = {};
   let newTagList = aTags;
-  for each (let [, tag] in Iterator(newTagList))
+  for (let tag of newTagList)
     newTags[tag.key] = null;
 
-  let toAdd = [x.key for each ([, x] in Iterator(newTagList))
-    if (!(x.key in oldTags))];
-  let toRemove = [x.key for each ([, x] in Iterator(oldTagList))
-    if (!(x.key in newTags))];
+  let toAdd = newTagList.filter(x => !(x.key in oldTags)).map(x => x.key);
+  let toRemove = oldTagList.filter(x => !(x.key in newTags)).map(x => x.key);
 
   let folder = aMsgHdr.folder;
   let msgHdr = toXPCOMArray([aMsgHdr], Ci.nsIMutableArray);
@@ -242,7 +235,7 @@ function msgHdrSetTags (aMsgHdr, aTags) {
  */
 function msgHdrsMarkAsRead(msgHdrs, read) {
   let pending = {};
-  for each (let msgHdr in msgHdrs) {
+  for (let msgHdr of msgHdrs) {
     if (msgHdr.isRead == read)
       continue;
     if (!pending[msgHdr.folder.URI]) {
@@ -253,7 +246,7 @@ function msgHdrsMarkAsRead(msgHdrs, read) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr, false);
   }
-  for each (let { folder, msgs } in pending) {
+  for (let [ uri, { folder, msgs } ] of entries(pending)) {
     folder.markMessagesRead(msgs, read);
     folder.msgDatabase = null; /* don't leak */
   }
@@ -265,7 +258,7 @@ function msgHdrsMarkAsRead(msgHdrs, read) {
  */
 function msgHdrsDelete(msgHdrs) {
   let pending = {};
-  for each (let msgHdr in msgHdrs) {
+  for (let msgHdr of msgHdrs) {
     if (!pending[msgHdr.folder.URI]) {
       pending[msgHdr.folder.URI] = {
         folder: msgHdr.folder,
@@ -274,7 +267,7 @@ function msgHdrsDelete(msgHdrs) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr, false);
   }
-  for each (let { folder, msgs } in pending) {
+  for (let [ uri, { folder, msgs } ] of pending) {
     folder.deleteMessages(msgs, getMail3Pane().msgWindow, false, false, null, true);
     folder.msgDatabase = null; /* don't leak */
   }
@@ -406,7 +399,7 @@ function msgHdrGetHeaders(aMsgHdr, k) {
         let str = aRawString.replace(re, " ");
         let lines = str.split(/\r?\n/);
         let obj = {};
-        for each (let [, line] in Iterator(lines)) {
+        for (let line of lines) {
           let i = line.indexOf(":");
           if (i < 0)
             continue;
@@ -481,7 +474,7 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
       copyNext();
   }
 
-  for each (let [, aMsgHdr] in Iterator(aMsgHdrs)) {
+  for (let aMsgHdr of aMsgHdrs) {
     let msgHdr = aMsgHdr;
     let uri = msgHdrGetUri(msgHdr);
     let messageService = MailServices.messenger.messageServiceFromURI(uri);

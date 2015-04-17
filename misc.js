@@ -128,7 +128,7 @@ function* entries(anObject) {
  */
 function MixIn(aConstructor, aMixIn) {
   let proto = aConstructor.prototype;
-  for (let [name, func] in Iterator(aMixIn)) {
+  for (let [name, func] of entries(aMixIn)) {
     if (name.substring(0, 4) == "get_")
       proto.__defineGetter__(name.substring(4), func);
     else
@@ -160,7 +160,7 @@ function fillIdentities(aSkipNntp) {
   Log.warn("fillIdentities is deprecated! Use getIdentities instead!");
   Log.debug("Filling identities with skipnntp = ", aSkipNntp);
 
-  for each (let currentIdentity in getIdentities(aSkipNntp)) {
+  for (let currentIdentity of getIdentities(aSkipNntp)) {
     gIdentities[currentIdentity.identity.email] = currentIdentity.identity;
     if (currentIdentity.isDefault) {
       gIdentities["default"] = currentIdentity.identity;
@@ -187,12 +187,12 @@ function getDefaultIdentity() {
  */
 function getIdentities(aSkipNntpIdentities = true) {
   let identities = [];
-  for each (let account in fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
+  for (let account of fixIterator(MailServices.accounts.accounts, Ci.nsIMsgAccount)) {
     let server = account.incomingServer;
     if (aSkipNntpIdentities && (!server || server.type != "pop3" && server.type != "imap")) {
       continue;
     }
-    for each (let currentIdentity in fixIterator(account.identities, Ci.nsIMsgIdentity)) {
+    for (let currentIdentity of fixIterator(account.identities, Ci.nsIMsgIdentity)) {
       // We're only interested in identities that have a real email.
       if (currentIdentity.email) {
         identities.push({ isDefault: (currentIdentity == MailServices.accounts.defaultAccount.defaultIdentity), identity: currentIdentity });
@@ -312,7 +312,7 @@ function parseMimeLine (aMimeLine, aDontFix) {
  */
 function encodeUrlParameters(aObj) {
   let kv = [];
-  for each (let [k, v] in Iterator(aObj)) {
+  for (let [k, v] of entries(aObj)) {
     kv.push(k+"="+encodeURIComponent(v));
   }
   return kv.join("&");
@@ -330,7 +330,7 @@ function decodeUrlParameters(aStr) {
   if (i >= 0) {
     let query = aStr.substring(i+1, aStr.length);
     let keyVals = query.split("&");
-    for each (let [, keyVal] in Iterator(keyVals)) {
+    for (let keyVal of keyVals) {
       let [key, val] = keyVal.split("=");
       val = decodeURIComponent(val);
       params[key] = val;
