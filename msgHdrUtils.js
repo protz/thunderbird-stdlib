@@ -267,7 +267,7 @@ function msgHdrsDelete(msgHdrs) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr, false);
   }
-  for (let [ uri, { folder, msgs } ] of pending) {
+  for (let [ uri, { folder, msgs } ] of entries(pending)) {
     folder.deleteMessages(msgs, getMail3Pane().msgWindow, false, false, null, true);
     folder.msgDatabase = null; /* don't leak */
   }
