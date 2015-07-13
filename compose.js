@@ -368,12 +368,12 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   } else {
     to = [[author, authorEmailAddress]];
   }
-  cc = ccList.filter((e, i) => ccListEmailAddresses[i] != identityEmail).
-    map((cc, i) => [cc, ccListEmailAddresses[i]]);
+  cc = ccList.map((cc, i) => [cc, ccListEmailAddresses[i]]).
+    filter((e, i) => e[1] != identityEmail);
   if (!isReplyToOwnMsg) {
     cc = cc.concat
-      (recipients.filter((e, i) => recipientsEmailAddresses[i] != identityEmail).
-        map((r, i) => [r, recipientsEmailAddresses[i]]));
+      (recipients.map((r, i) => [r, recipientsEmailAddresses[i]]).
+        filter((e, i) => e[1] != identityEmail));
   }
   bcc = bccList.map((bcc, i) => [bcc, bccListEmailAddresses]);
 
