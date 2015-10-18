@@ -43,7 +43,7 @@
  * @author Jonathan Protzenko
  */
  
-let EXPORTED_SYMBOLS = ['RestartlessMenuItems'];
+var EXPORTED_SYMBOLS = ['RestartlessMenuItems'];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
 
