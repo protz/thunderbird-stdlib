@@ -287,9 +287,11 @@ function sendMessage(aParams,
       break;
     }
   }
-  references = ["<"+x+">" for (x of references)];
+  references = references.map(x => "<"+x+">");
   fields.references = references.join(" ");
-  [fields.addAttachment(x) for (x of attachments)];
+  for (let x of attachments) {
+    fields.addAttachment(x);
+  }
 
   let fccFolder = identity.fccFolder;
   let fccSameFolder = identity.fccReplyFollowsParent;
@@ -461,7 +463,7 @@ function sendMessage(aParams,
             fields.forcePlainText = true;
             fields.useMultipartAlternative = false;
             break;
-          
+
           case Ci.nsIMsgCompConvertible.No: // 4
           default:
             fields.useMultipartAlternative = true;
