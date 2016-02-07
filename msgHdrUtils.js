@@ -88,7 +88,7 @@ XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
  * @return {String}
  */
 function msgHdrGetUri (aMsg) {
-  aMsg.folder.getUriForMsg(aMsg)
+  return aMsg.folder.getUriForMsg(aMsg);
 }
 
 /**
@@ -112,7 +112,7 @@ function msgUriToMsgHdr(aUri) {
  * @return {bool}
  */
 function msgHdrIsInbox(msgHdr) {
-  msgHdr.folder.getFlag(nsMsgFolderFlags_Inbox)
+  return msgHdr.folder.getFlag(nsMsgFolderFlags_Inbox);
 }
 
 /**
@@ -121,7 +121,7 @@ function msgHdrIsInbox(msgHdr) {
  * @return {bool}
  */
 function msgHdrIsDraft(msgHdr) {
-  msgHdr.folder.getFlag(nsMsgFolderFlags_Drafts)
+  return msgHdr.folder.getFlag(nsMsgFolderFlags_Drafts);
 }
 
 /**
@@ -130,7 +130,7 @@ function msgHdrIsDraft(msgHdr) {
  * @return {bool}
  */
 function msgHdrIsSent(msgHdr) {
-  msgHdr.folder.getFlag(nsMsgFolderFlags_SentMail)
+  return msgHdr.folder.getFlag(nsMsgFolderFlags_SentMail);
 }
 
 /**
@@ -139,7 +139,7 @@ function msgHdrIsSent(msgHdr) {
  * @return {bool}
  */
 function msgHdrIsArchive(msgHdr) {
-  msgHdr.folder.getFlag(nsMsgFolderFlags_Archive)
+  return msgHdr.folder.getFlag(nsMsgFolderFlags_Archive);
 }
 
 /**
@@ -148,7 +148,7 @@ function msgHdrIsArchive(msgHdr) {
  * @return {nsIMsgDbHdr} The message header.
  */
 function msgHdrFromNeckoUrl(aUrl) {
-  aUrl.QueryInterface(Ci.nsIMsgMessageUrl).messageHeader
+  return aUrl.QueryInterface(Ci.nsIMsgMessageUrl).messageHeader;
 }
 
 /**
