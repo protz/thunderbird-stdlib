@@ -252,8 +252,7 @@ function sendMessage(aParams,
       // about to send...
       Log.assert(urls.length == 1, "Can't edit more than one message at a time");
       let msgHdr = msgUriToMsgHdr(urls[0]);
-      references = [msgHdr.getStringReference(i)
-        for (i of range(0, msgHdr.numReferences))];
+      references =  [ ...range(0, msgHdr.numReferences) ].map(i => msgHdr.getStringReference(i));
       break;
     }
 
@@ -266,8 +265,7 @@ function sendMessage(aParams,
     case mCompType.ReplyToList: {
       Log.assert(urls.length == 1, "Can't reply to more than one message at a time");
       let msgHdr = msgUriToMsgHdr(urls[0]);
-      references = [msgHdr.getStringReference(i)
-        for (i of range(0, msgHdr.numReferences))];
+      references =  [ ...range(0, msgHdr.numReferences) ].map(i => msgHdr.getStringReference(i));
       references.push(msgHdr.messageId);
       break;
     }
