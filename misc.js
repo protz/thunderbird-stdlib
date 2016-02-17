@@ -75,7 +75,9 @@ let Log = setupLogging(logRoot+".Stdlib");
 let isOSX = ("nsILocalFileMac" in Ci);
 let isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 
-function isAccel (event) (isOSX && event.metaKey || event.ctrlKey)
+function isAccel (event) {
+  return isOSX && event.metaKey || event.ctrlKey;
+}
 
 /**
  * Low-level XPCOM-style macro. You might need this for the composition and
@@ -99,8 +101,8 @@ function NS_SUCCEEDED(v) {
 
 /**
  * Python-style range function to use in list comprehensions.
- *  @param {Number} begin 
- *  @param {Number} end 
+ *  @param {Number} begin
+ *  @param {Number} end
  *  @return {Generator} An iterator that yields from begin to end - 1.
  */
 function* range(begin, end) {
@@ -176,7 +178,7 @@ function fillIdentities(aSkipNntp) {
  * Returns the default identity in the form { boolean isDefault; nsIMsgIdentity identity }
  */
 function getDefaultIdentity() {
-  return getIdentities().find(function (x) x.isDefault);
+  return getIdentities().find(x => x.isDefault);
 }
 
 /**
@@ -203,7 +205,7 @@ function getIdentities(aSkipNntpIdentities = true) {
     Log.warn("Didn't find any identities!");
   }
   else {
-    if (!identities.some(function (x) x.isDefault)) {
+    if (!identities.some(x => x.isDefault)) {
       Log.warn("Didn't find any default key - mark the first identity as default!");
       identities[0].isDefault = true;
     }
@@ -217,7 +219,7 @@ function getIdentities(aSkipNntpIdentities = true) {
  * @returns {{Boolean} isDefault, {{nsIMsgIdentity} identity} if found, otherwise undefined
  */
 function getIdentityForEmail(anEmailAddress) {
-  return getIdentities(false).find(function (ident) ident.identity.email.toLowerCase() == anEmailAddress.toLowerCase());
+  return getIdentities(false).find(ident => ident.identity.email.toLowerCase() == anEmailAddress.toLowerCase());
 }
 
 /**
@@ -296,8 +298,9 @@ function parseMimeLine (aMimeLine, aDontFix) {
                                                                      names,
                                                                      fullNames);
   if (numAddresses)
-    return [{ email: emails.value[i], name: names.value[i], fullName: fullNames.value[i] }
-      for (i of range(0, numAddresses))];
+    return [ ...range(0, numAddresses) ].map(i => {
+      return { email: emails.value[i], name: names.value[i], fullName: fullNames.value[i] };
+    });
   else if (aDontFix)
     return [];
   else
@@ -372,5 +375,5 @@ function systemCharset() {
 function combine(a1, a2) {
   if (a1.length != a2.length)
     throw new Error("combine: the given arrays have different lengths");
-  return [[a1[i], a2[i]] for (i of range(0, a1.length))];
+  return [ ...range(0, a1.length) ].map(i => [a1[i], a2[i]]);
 }

@@ -355,9 +355,9 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
     let email = currentIdentity.identity.email.toLowerCase();
     if (email == authorEmailAddress)
       isReplyToOwnMsg = true;
-    if (recipientsEmailAddresses.some(function (x) x == email))
+    if (recipientsEmailAddresses.some(x => x == email))
       isReplyToOwnMsg = false;
-    if (ccListEmailAddresses.some(function (x) x == email))
+    if (ccListEmailAddresses.some(x => x == email))
       isReplyToOwnMsg = false;
   }
 
