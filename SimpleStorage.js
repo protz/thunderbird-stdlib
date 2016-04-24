@@ -48,10 +48,15 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.importRelative(this, "../log.js");
 
-let Log = setupLogging(logRoot+".SimpleStorage");
-Log.debug("Simple Storage loaded.");
+try {
+    XPCOMUtils.importRelative(this, "../log.js");
+    let Log = setupLogging(logRoot+".SimpleStorage");
+    Log.debug("Simple Storage loaded.");
+    var loggingEnabled = true;
+} catch (err) {
+    var loggingEnabled = false;
+}
 
 const KEY_PROFILEDIR = "ProfD";
 const FILE_SIMPLE_STORAGE = "simple_storage.sqlite";
@@ -146,7 +151,7 @@ let SimpleStorage = {
  * @constructor
  */
 function SimpleStorageCps(aTblName) {
-  // Will also create the file if it does not exist  
+  // Will also create the file if it does not exist
   this.dbConnection = Services.storage.openDatabase(FileUtils.getFile(KEY_PROFILEDIR,
                                                                       [FILE_SIMPLE_STORAGE]));
   if (!this.dbConnection.tableExists(aTblName))
@@ -179,17 +184,23 @@ SimpleStorageCps.prototype = {
       },
 
       handleError: function(aError) {
-        Log.error("Error:", aError.message);
-        Log.error("Query was get("+aKey+")");
+        if (loggingEnabled) {
+          Log.error("Error:", aError.message);
+          Log.error("Query was get("+aKey+")");
+        }
       },
 
       handleCompletion: function(aReason) {
         if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          Log.error("Query canceled or aborted!");
-          Log.error("Query was get("+aKey+")");
+          if (loggingEnabled) {
+            Log.error("Query canceled or aborted!");
+            Log.error("Query was get("+aKey+")");
+          }
         } else {
           if (results.length > 1) {
-            Log.assert(false, "Multiple rows for the same primary key? That's impossible!");
+            if (loggingEnabled) {
+              Log.assert(false, "Multiple rows for the same primary key? That's impossible!");
+            }
           } else if (results.length == 1) {
             k(JSON.parse(results[0]).value);
           } else if (results.length == 0) {
@@ -223,14 +234,18 @@ SimpleStorageCps.prototype = {
         },
 
         handleError: function(aError) {
-          Log.error("Error:", aError.message);
-          Log.error("Query was get("+aKey+")");
+          if (loggingEnabled) {
+            Log.error("Error:", aError.message);
+            Log.error("Query was get("+aKey+")");
+          }
         },
 
         handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-            Log.error("Query canceled or aborted!");
-            Log.error("Query was get("+aKey+")");
+            if (loggingEnabled) {
+              Log.error("Query canceled or aborted!");
+              Log.error("Query was get("+aKey+")");
+            }
           } else {
             k(!aResult);
           }
@@ -269,14 +284,18 @@ SimpleStorageCps.prototype = {
           },
 
           handleError: function(aError) {
-            Log.error("Error:", aError.message);
-            Log.error("Query was get("+aKey+")");
+            if (loggingEnabled) {
+              Log.error("Error:", aError.message);
+              Log.error("Query was get("+aKey+")");
+            }
           },
 
           handleCompletion: function(aReason) {
             if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-              Log.error("Query canceled or aborted!");
-              Log.error("Query was get("+aKey+")");
+              if (loggingEnabled) {
+                Log.error("Query canceled or aborted!");
+                Log.error("Query was get("+aKey+")");
+              }
             } else {
               k(true); // element was removed
             }
