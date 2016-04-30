@@ -48,10 +48,15 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.importRelative(this, "../log.js");
 
-let Log = setupLogging(logRoot+".SimpleStorage");
-Log.debug("Simple Storage loaded.");
+let Log;
+try {
+  XPCOMUtils.importRelative(this, "../log.js");
+  Log = setupLogging(logRoot+".SimpleStorage");
+  Log.debug("Simple Storage loaded.");
+} catch (err) {
+  Log = {error: () => {}, debug: () => {}};
+}
 
 const KEY_PROFILEDIR = "ProfD";
 const FILE_SIMPLE_STORAGE = "simple_storage.sqlite";
@@ -146,7 +151,7 @@ let SimpleStorage = {
  * @constructor
  */
 function SimpleStorageCps(aTblName) {
-  // Will also create the file if it does not exist  
+  // Will also create the file if it does not exist
   this.dbConnection = Services.storage.openDatabase(FileUtils.getFile(KEY_PROFILEDIR,
                                                                       [FILE_SIMPLE_STORAGE]));
   if (!this.dbConnection.tableExists(aTblName))
