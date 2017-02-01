@@ -184,17 +184,23 @@ SimpleStorageCps.prototype = {
       },
 
       handleError: function(aError) {
-        Log.error("Error:", aError.message);
-        Log.error("Query was get("+aKey+")");
+        if (loggingEnabled) {
+          Log.error("Error:", aError.message);
+          Log.error("Query was get("+aKey+")");
+        }
       },
 
       handleCompletion: function(aReason) {
         if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          Log.error("Query canceled or aborted!");
-          Log.error("Query was get("+aKey+")");
+          if (loggingEnabled) {
+            Log.error("Query canceled or aborted!");
+            Log.error("Query was get("+aKey+")");
+          }
         } else {
           if (results.length > 1) {
-            Log.assert(false, "Multiple rows for the same primary key? That's impossible!");
+            if (loggingEnabled) {
+              Log.assert(false, "Multiple rows for the same primary key? That's impossible!");
+            }
           } else if (results.length == 1) {
             k(JSON.parse(results[0]).value);
           } else if (results.length == 0) {
@@ -228,14 +234,18 @@ SimpleStorageCps.prototype = {
         },
 
         handleError: function(aError) {
-          Log.error("Error:", aError.message);
-          Log.error("Query was get("+aKey+")");
+          if (loggingEnabled) {
+            Log.error("Error:", aError.message);
+            Log.error("Query was get("+aKey+")");
+          }
         },
 
         handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-            Log.error("Query canceled or aborted!");
-            Log.error("Query was get("+aKey+")");
+            if (loggingEnabled) {
+              Log.error("Query canceled or aborted!");
+              Log.error("Query was get("+aKey+")");
+            }
           } else {
             k(!aResult);
           }
@@ -274,14 +284,18 @@ SimpleStorageCps.prototype = {
           },
 
           handleError: function(aError) {
-            Log.error("Error:", aError.message);
-            Log.error("Query was get("+aKey+")");
+            if (loggingEnabled) {
+              Log.error("Error:", aError.message);
+              Log.error("Query was get("+aKey+")");
+            }
           },
 
           handleCompletion: function(aReason) {
             if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-              Log.error("Query canceled or aborted!");
-              Log.error("Query was get("+aKey+")");
+              if (loggingEnabled) {
+                Log.error("Query canceled or aborted!");
+                Log.error("Query was get("+aKey+")");
+              }
             } else {
               k(true); // element was removed
             }
