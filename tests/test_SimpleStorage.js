@@ -83,7 +83,6 @@ function test_sync_api () {
     do_check_false(r);
     dump("\033[01;34m--- async api test is over\033[00m\n");
     remainingThreads--;
-    yield SimpleStorage.kWorkDone;
   });
 }
 

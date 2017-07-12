@@ -61,8 +61,6 @@ try {
 const KEY_PROFILEDIR = "ProfD";
 const FILE_SIMPLE_STORAGE = "simple_storage.sqlite";
 
-const kWorkDone = 42;
-
 /**
  * The global SimpleStorage object. It has various method to instanciate a
  *  storage session with a given style. You should not have two different styles
@@ -95,7 +93,6 @@ let SimpleStorage = {
    *  SimpleStorage.spin(function anon () {
    *    let r = yield ss.get("myKey");
    *    // do stuff with r
-   *    yield SimpleStorage.kWorkDone;
    *    // nothing is ever executed after the final yield call
    *  });
    * </pre>
@@ -124,25 +121,13 @@ let SimpleStorage = {
     return new SimpleStoragePromises(cps);
   },
 
-  kWorkDone: kWorkDone,
-
   /**
    * The main driver function for the iterator-style API.
    */
   spin: function _SimpleStorage_spin(f) {
-    let iterator = f();
-    // Note: As a point of interest, calling send(undefined) is equivalent
-    // to calling next(). However, starting a newborn generator with any value
-    // other than undefined when calling send() will result in a TypeError
-    // exception.
-    (function send(r) {
-      let asyncFunction = iterator.send(r);
-      if (asyncFunction !== kWorkDone) {
-        asyncFunction(function (r) {
-          send(r);
-        });
-      }
-    })();
+    for (let n of f()) {
+      // No need to do anything, let the iterator be handled by the for loop.
+    }
   },
 };
 
