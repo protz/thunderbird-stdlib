@@ -61,19 +61,16 @@ var EXPORTED_SYMBOLS = [
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource:///modules/mailServices.js");
-// That one doesn't belong to MailServices.
-XPCOMUtils.defineLazyServiceGetter(MailServices, "i18nDateFormatter",
-                                   "@mozilla.org/intl/scriptabledateformat;1",
-                                   "nsIScriptableDateFormat");
 
 XPCOMUtils.importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
 
-let isOSX = ("nsILocalFileMac" in Ci);
-let isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
+let isOSX = AppConstants.platform === "macosx";
+let isWindows = AppConstants.platform === "win";
 
 function isAccel (event) {
   return isOSX && event.metaKey || event.ctrlKey;
@@ -235,14 +232,12 @@ function dateAsInMessageList(aDate) {
     now.getFullYear() == aDate.getFullYear() &&
     now.getMonth() == aDate.getMonth() &&
     now.getDate() == aDate.getDate();
+
   let format = isToday
-    ? Ci.nsIScriptableDateFormat.dateFormatNone
-    : Ci.nsIScriptableDateFormat.dateFormatShort;
-  // That is an ugly XPCOM call!
-  return MailServices.i18nDateFormatter.FormatDateTime(
-    "", format, Ci.nsIScriptableDateFormat.timeFormatNoSeconds,
-    aDate.getFullYear(), aDate.getMonth() + 1, aDate.getDate(),
-    aDate.getHours(), aDate.getMinutes(), aDate.getSeconds());
+    ? {timeStyle: "short"}
+    : {dateStyle: "short", timeStyle: "short"};
+  let dateTimeFormatter = Services.intl.createDateTimeFormat(undefined, format);
+  return dateTimeFormatter.format(aDate);
 }
 
 
