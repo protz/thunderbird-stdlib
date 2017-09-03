@@ -65,6 +65,14 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource:///modules/mailServices.js");
 
+if (!Services.intl) {
+  // That one doesn't belong to MailServices.
+  XPCOMUtils.defineLazyServiceGetter(MailServices, "i18nDateFormatter",
+                                     "@mozilla.org/intl/scriptabledateformat;1",
+                                     "nsIScriptableDateFormat");
+}
+
+
 XPCOMUtils.importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
@@ -232,6 +240,18 @@ function dateAsInMessageList(aDate) {
     now.getFullYear() == aDate.getFullYear() &&
     now.getMonth() == aDate.getMonth() &&
     now.getDate() == aDate.getDate();
+
+  // Supports Thunderbird 52 & older.
+  if (!Services.intl) {
+    let format = isToday
+      ? Ci.nsIScriptableDateFormat.dateFormatNone
+      : Ci.nsIScriptableDateFormat.dateFormatShort;
+    // That is an ugly XPCOM call!
+    return MailServices.i18nDateFormatter.FormatDateTime(
+      "", format, Ci.nsIScriptableDateFormat.timeFormatNoSeconds,
+      aDate.getFullYear(), aDate.getMonth() + 1, aDate.getDate(),
+      aDate.getHours(), aDate.getMinutes(), aDate.getSeconds());
+  }
 
   let format = isToday
     ? {timeStyle: "short"}
