@@ -256,7 +256,13 @@ function dateAsInMessageList(aDate) {
   let format = isToday
     ? {timeStyle: "short"}
     : {dateStyle: "short", timeStyle: "short"};
-  let dateTimeFormatter = Services.intl.createDateTimeFormat(undefined, format);
+  let dateTimeFormatter;
+  if ("createDateTimeFormat" in Services.intl) {
+    // Thunderbird 58 & earlier.
+    dateTimeFormatter = Services.intl.createDateTimeFormat(undefined, format);
+  } else {
+    dateTimeFormatter = new Services.intl.DateTimeFormat(undefined, format)
+  }
   return dateTimeFormatter.format(aDate);
 }
 
