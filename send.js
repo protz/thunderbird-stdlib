@@ -42,8 +42,7 @@
 
 var EXPORTED_SYMBOLS = ['sendMessage']
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
-
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/PluralForm.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
@@ -67,14 +66,21 @@ let Log = setupLogging(logRoot+".Send");
  * @return {String} The URI for the folder. Use MailUtils.getFolderForURI.
  */
 function getArchiveFolderUriFor(identity, msgDate) {
-  /**
-   * I think this function isn't doing the right thing when we have a GMail
-   * folder...
-   */
+  let formatter = new Services.intl.DateTimeFormat(undefined, {
+    year: 'numeric', month: "2-digit"
+  });
   let msgYear = msgDate.getFullYear().toString();
-  let monthFolderName = msgDate.toLocaleFormat("%Y-%m");
+  let monthFolderName = msgYear + "-" + (msgDate.getMonth() + 1).toString().padStart(2, "0");
   let granularity = identity.archiveGranularity;
   let folderUri = identity.archiveFolder;
+  let archiveFolder = MailUtils.getFolderForURI(folderUri, false);
+  let forceSingle = !archiveFolder.canCreateSubfolders;
+  if (!forceSingle && (archiveFolder.server instanceof Ci.nsIImapIncomingServer)) {
+    forceSingle = archiveFolder.server.isGMailServer;
+  }
+  if (forceSingle) {
+    return folderUri;
+  }
   if (granularity >= Ci.nsIMsgIdentity.perYearArchiveFolders)
     folderUri += "/" + msgYear;
   if (granularity >= Ci.nsIMsgIdentity.perMonthArchiveFolders)
