@@ -75,7 +75,16 @@ Cu.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource:///modules/mailServices.js");
 
-XPCOMUtils.importRelative(this, "misc.js");
+function importRelative(that, path) {
+  try {
+    Cu.import(new URL(path, that.__URI__));
+  } catch (e) {
+    // compatible with TB60
+    XPCOMUtils.importRelative(that, path);
+  }
+}
+
+importRelative(this, "misc.js");
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
 XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
@@ -356,7 +365,7 @@ function createStreamListener(k) {
     _stream : null,
 
     QueryInterface:
-      XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
+      generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
 
     // nsIRequestObserver
     onStartRequest: function(aRequest, aContext) {
@@ -453,7 +462,7 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
       msgHdr.flags,
       msgHdr.getStringProperty("keywords"),
       {
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIMsgCopyServiceListener]),
+        QueryInterface: generateQI([Ci.nsIMsgCopyServiceListener]),
 
         OnStartCopy: function () {
         },

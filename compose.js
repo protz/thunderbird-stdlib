@@ -56,9 +56,18 @@ Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource:///modules/gloda/mimemsg.js");
 Cu.import("resource:///modules/mailServices.js");
 
-XPCOMUtils.importRelative(this, "misc.js");
-XPCOMUtils.importRelative(this, "msgHdrUtils.js");
-XPCOMUtils.importRelative(this, "../log.js");
+function importRelative(that, path) {
+  try {
+    Cu.import(new URL(path, that.__URI__));
+  } catch (e) {
+    // compatible with TB60
+    XPCOMUtils.importRelative(that, path);
+  }
+}
+
+importRelative(this, "misc.js");
+importRelative(this, "msgHdrUtils.js");
+importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
 
@@ -111,7 +120,7 @@ function quoteMsgHdr(aMsgHdr, k) {
       chunks.push(unicodeConverter.convertFromByteArray(array, array.length));
     },
 
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIStreamListener,
+    QueryInterface: generateQI([Ci.nsISupports, Ci.nsIStreamListener,
       Ci.nsIMsgQuotingOutputStreamListener, Ci.nsIRequestObserver])
   };
   // Here's what we want to stream...

@@ -51,8 +51,18 @@ ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 let Log;
+
+function importRelative(that, path) {
+  try {
+    Cu.import(new URL(path, that.__URI__));
+  } catch (e) {
+    // compatible with TB60
+    XPCOMUtils.importRelative(that, path);
+  }
+}
+
 try {
-  XPCOMUtils.importRelative(this, "../log.js");
+  importRelative(this, "../log.js");
   Log = setupLogging(logRoot+".SimpleStorage");
   Log.debug("Simple Storage loaded.");
 } catch (err) {
