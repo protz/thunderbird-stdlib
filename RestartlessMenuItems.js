@@ -65,7 +65,8 @@ var global = this;
  * @param loadedAlready {bool} The window above is fully loaded, 
  *  or we should wait to be loaded.
  * @param options {Object} Options for the <tt>menuitem</tt>, with the following parameters:
- * @param options.id {String} An id for the <tt>menuitem</tt>, this should be namespaced.
+ * @param options.id {String} (optional) An id for the <tt>menuitem</tt> in taskPopup menu, this should be namespaced, you should either fill id or idAppMenu or both.
+ * @param options.idAppMenu {String} (optional) An id for the <tt>menuitem</tt> in Appmenu taskPopup menu, this should be namespaced, you should either fill id or idAppMenu or both.
  * @param options.label {String} A label for the <tt>menuitem</tt>.
  * @param options.url {String} (optional, preferred) An URL where the <tt>oncommand</tt> should navigate to.
  * @param options.onCommand {String} (optional) A function callback what the <tt>menuitem</tt>'s oncommand will call.
@@ -75,13 +76,16 @@ var global = this;
  */
 function monkeyPatchWindow(w, loadedAlready, options) {
   let doIt = function () {
-    let id = options.id;
-    let taskPopup = w.document.getElementById("taskPopup");
-    let tabmail = w.document.getElementById("tabmail");
-    let oldMenuitem = w.document.getElementById(id);
+	let id = options.id;
+	let idAppMenu = options.idAppMenu;
 
+	let taskPopup = w.document.getElementById("taskPopup");
+	let appMenuPopup = w.document.getElementById("appmenu_taskPopup");
+
+    let tabmail = w.document.getElementById("tabmail");
+	
     // Check the windows is a mail:3pane
-    if (!taskPopup || !tabmail)
+    if ( (!taskPopup && !appMenuPopup) || !tabmail)
       return;
 
     let openTabUrl = function() {
@@ -96,6 +100,20 @@ function monkeyPatchWindow(w, loadedAlready, options) {
       openTabUrl() || options.onCommand && options.onCommand();
     };
 
+	if (id && taskPopup)
+		addMenuItem(w,onCmd,options,id,taskPopup);
+	if (idAppMenu && appMenuPopup)
+		addMenuItem(w,onCmd,options,idAppMenu,appMenuPopup);
+  };
+  if (loadedAlready)
+    doIt();
+  else
+    w.addEventListener("load", doIt, false);
+}
+
+function addMenuItem(w,onCmd,options,id,taskPopup)
+{
+	let oldMenuitem = w.document.getElementById(id);
     let menuitem = w.document.createElement("menuitem");
     menuitem.addEventListener("command", onCmd, false);
     menuitem.setAttribute("label", options.label);
@@ -108,15 +126,16 @@ function monkeyPatchWindow(w, loadedAlready, options) {
       menuitem.setAttribute("class", "menuitem-iconic");
       menuitem.style.listStyleImage = "url('" + options.image + "')";
     }
-    if (!oldMenuitem)
-      taskPopup.appendChild(menuitem);
-    else
-      taskPopup.replaceChild(menuitem, oldMenuitem);
-  };
-  if (loadedAlready)
-    doIt();
-  else
-    w.addEventListener("load", doIt, false);
+	if (!oldMenuitem)
+	{
+	  if (taskPopup)
+	    taskPopup.appendChild(menuitem);
+	}
+	else
+	{
+	  if (taskPopup)
+		taskPopup.replaceChild(menuitem, oldMenuitem);
+	}
 }
 
 /**
