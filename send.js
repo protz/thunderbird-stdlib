@@ -40,20 +40,20 @@
  * @author Jonathan Protzenko
  */
 
-var EXPORTED_SYMBOLS = ['sendMessage']
+var EXPORTED_SYMBOLS = ["sendMessage"];
 
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/PluralForm.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
-Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
-Cu.import("resource:///modules/mailServices.js");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
+ChromeUtils.import("resource:///modules/MailUtils.js"); // for getFolderForURI
+ChromeUtils.import("resource:///modules/mailServices.js");
 
 const mCompType = Ci.nsIMsgCompType;
 const isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
 
 function importRelative(that, path) {
   try {
-    Cu.import(new URL(path, that.__URI__));
+    ChromeUtils.import(new URL(path, that.__URI__));
   } catch (e) {
     // compatible with TB60
     XPCOMUtils.importRelative(that, path);
@@ -65,7 +65,7 @@ importRelative(this, "msgHdrUtils.js");
 importRelative(this, "compose.js");
 importRelative(this, "../log.js");
 
-let Log = setupLogging(logRoot+".Send");
+let Log = setupLogging(logRoot + ".Send");
 
 /**
  * Get the Archive folder URI depending on the given identity and the given Date
@@ -76,7 +76,7 @@ let Log = setupLogging(logRoot+".Send");
  */
 function getArchiveFolderUriFor(identity, msgDate) {
   let formatter = new Services.intl.DateTimeFormat(undefined, {
-    year: 'numeric', month: "2-digit"
+    year: "numeric", month: "2-digit",
   });
   let msgYear = msgDate.getFullYear().toString();
   let monthFolderName = msgYear + "-" + (msgDate.getMonth() + 1).toString().padStart(2, "0");
@@ -99,15 +99,15 @@ function getArchiveFolderUriFor(identity, msgDate) {
 
 function wrapBody(t) {
   let r =
-    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"+
-    "<html>\n"+
-    "  <head>\n"+
-    "    <meta http-equiv=\"content-type\" content=\"text/html;\n"+
-    "      charset=ISO-8859-1\">\n"+
-    "  </head>\n"+
-    "  <body>"+
-    "    "+t+"\n"+
-    "  </body>\n"+
+    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n" +
+    "<html>\n" +
+    "  <head>\n" +
+    "    <meta http-equiv=\"content-type\" content=\"text/html;\n" +
+    "      charset=ISO-8859-1\">\n" +
+    "  </head>\n" +
+    "  <body>" +
+    "    " + t + "\n" +
+    "  </body>\n" +
     "</html>\n"
   ;
   return r;
@@ -119,29 +119,29 @@ function wrapBody(t) {
  *  try to interact with it.
  * We'll probably try to improve this in the near future.
  */
-function FakeEditor (aIframe) {
+function FakeEditor(aIframe) {
   this.iframe = aIframe;
   this.editor = getEditorForIframe(aIframe);
   this.editor.QueryInterface(Ci.nsIEditorMailSupport);
 }
 
 FakeEditor.prototype = {
-  getEmbeddedObjects: function _FakeEditor_getEmbeddedObjects () {
+  getEmbeddedObjects: function _FakeEditor_getEmbeddedObjects() {
     return this.editor.getEmbeddedObjects();
   },
 
-  outputToString: function _FakeEditor_outputToString (formatType, flags) {
+  outputToString: function _FakeEditor_outputToString(formatType, flags) {
     return this.editor.outputToString(formatType, flags);
   },
 
   // bodyConvertible calls GetRootElement on m_editor which is supposed to be an
   // nsIEditor, so implement this property...
-  get rootElement () {
+  get rootElement() {
     return this.iframe.contentDocument.body;
   },
 
   QueryInterface: generateQI([Ci.nsISupports, Ci.nsIEditor, Ci.nsIEditorMailSupport]),
-}
+};
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to
 //  nsMsgCopySendListener (nsMsgCompose.cpp). nsMsgCopySendListener holds a
@@ -164,9 +164,9 @@ let gMsgCompose;
 function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
   if ("InitCompose" in aMsgComposeService) {
     return aMsgComposeService.InitCompose(aWindow, aParams);
-  } else {
-    return aMsgComposeService.initCompose(aParams, aWindow, aDocShell);
   }
+    return aMsgComposeService.initCompose(aParams, aWindow, aDocShell);
+
 }
 
 /**
@@ -300,7 +300,7 @@ function sendMessage(aParams,
       break;
     }
   }
-  references = references.map(x => "<"+x+">");
+  references = references.map(x => "<" + x + ">");
   fields.references = references.join(" ");
   for (let x of attachments) {
     fields.addAttachment(x);
@@ -396,13 +396,13 @@ function sendMessage(aParams,
     //  lines and push them as single lines in the HTML, with no <br>s in the
     //  middle, but well... I guess this is okay enough.
     aBody.match({
-      plainText: function (body) {
+      plainText(body) {
         if (composeHtml)
           fields.body = plainTextToHtml(body);
         else
           fields.body = body;
       },
-      editor: function (iframe) {
+      editor(iframe) {
         let html = iframe.contentDocument.body.innerHTML;
         if (composeHtml)
           fields.body = html;
@@ -414,12 +414,12 @@ function sendMessage(aParams,
     params.format = composeHtml
       ? Ci.nsIMsgCompFormat.HTML
       : Ci.nsIMsgCompFormat.PlainText;
-    fields.forcePlainText = composeHtml ? false : true;
+    fields.forcePlainText = !composeHtml;
     params.type = mCompType.New;
     return MailServices.compose.OpenComposeWindowWithParams(null, params);
-  } else {
+  }
     aBody.match({
-      plainText: function(body) {
+      plainText(body) {
         // We're in 2011 now, let's assume everyone knows how to read UTF-8
         fields.bodyIsAsciiOnly = false;
         fields.characterSet = "UTF-8";
@@ -435,7 +435,7 @@ function sendMessage(aParams,
         fields.forcePlainText = true;
         // Strip trailing whitespace before wrapping, so as not to interpret it
         // as a f=f line continuation.
-        fields.body = simpleWrap(body.replace(/ +$/gm, ""), 72)+"\n";
+        fields.body = simpleWrap(body.replace(/ +$/gm, ""), 72) + "\n";
         let msgLineBreak = isWindows ? "\r\n" : "\n";
         fields.body = fields.body.replace(/\r?\n/g, msgLineBreak);
 
@@ -446,7 +446,7 @@ function sendMessage(aParams,
         gMsgCompose = initCompose(MailServices.compose, params);
       },
 
-      editor: function (iframe) {
+      editor(iframe) {
         fields.bodyIsAsciiOnly = false;
         fields.characterSet = "UTF-8";
         gMsgCompose = initCompose(
@@ -500,5 +500,5 @@ function sendMessage(aParams,
       Log.error(e);
       dumpCallStack(e);
     }
-  }
+
 }
