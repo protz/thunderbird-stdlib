@@ -55,12 +55,14 @@ var EXPORTED_SYMBOLS = [
   // Character set helpers
   'systemCharset',
   // Platform-specific idioms
-  'isOSX', 'isWindows', 'isAccel'
+  'isOSX', 'isWindows', 'isAccel',
+  // Compatible with TB60
+  'generateQI'
 ]
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource:///modules/mailServices.js");
@@ -72,8 +74,16 @@ if (!Services.intl) {
                                      "nsIScriptableDateFormat");
 }
 
+function importRelative(that, path) {
+  try {
+    Cu.import(new URL(path, that.__URI__));
+  } catch (e) {
+    // compatible with TB60
+    XPCOMUtils.importRelative(that, path);
+  }
+}
 
-XPCOMUtils.importRelative(this, "../log.js");
+importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Stdlib");
 
@@ -397,4 +407,13 @@ function combine(a1, a2) {
   if (a1.length != a2.length)
     throw new Error("combine: the given arrays have different lengths");
   return [ ...range(0, a1.length) ].map(i => [a1[i], a2[i]]);
+}
+
+function generateQI(interfaces) {
+  try {
+    ChromeUtils.generateQI(interfaces);
+  } catch (e) {
+    // compatible with TB60
+    XPCOMUtils.generateQI(interfaces);
+  }
 }

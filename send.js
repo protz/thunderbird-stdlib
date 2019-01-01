@@ -44,17 +44,26 @@ var EXPORTED_SYMBOLS = ['sendMessage']
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/PluralForm.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
 Cu.import("resource:///modules/MailUtils.js"); // for getFolderForURI
 Cu.import("resource:///modules/mailServices.js");
 
 const mCompType = Ci.nsIMsgCompType;
 const isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
 
-XPCOMUtils.importRelative(this, "misc.js");
-XPCOMUtils.importRelative(this, "msgHdrUtils.js");
-XPCOMUtils.importRelative(this, "compose.js");
-XPCOMUtils.importRelative(this, "../log.js");
+function importRelative(that, path) {
+  try {
+    Cu.import(new URL(path, that.__URI__));
+  } catch (e) {
+    // compatible with TB60
+    XPCOMUtils.importRelative(that, path);
+  }
+}
+
+importRelative(this, "misc.js");
+importRelative(this, "msgHdrUtils.js");
+importRelative(this, "compose.js");
+importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot+".Send");
 
@@ -131,7 +140,7 @@ FakeEditor.prototype = {
     return this.iframe.contentDocument.body;
   },
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIEditor, Ci.nsIEditorMailSupport]),
+  QueryInterface: generateQI([Ci.nsISupports, Ci.nsIEditor, Ci.nsIEditorMailSupport]),
 }
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to
