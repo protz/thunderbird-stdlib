@@ -38,66 +38,45 @@
 //  head.js and we're setting XPCSHELL_TEST_PROFILE_DIR from run.js
 do_get_profile();
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
-
-Cu.import("resource:///modules/SimpleStorage.js");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource:///modules/SimpleStorage.js");
 
 let remainingThreads = 0;
 
-function test_sync_api () {
-  SimpleStorage.spin(function () {
-    let ss = SimpleStorage.createIteratorStyle("test");
-    let r;
+async function test_sync_api() {
+  let ss = SimpleStorage.createIteratorStyle("test");
+  let r;
 
-    r = yield ss.has("myKey");
-    do_check_false(r);
-    r = yield ss.set("myKey", "myVal");
-    do_check_true(r); // Value was added
-    r = yield ss.get("myKey");
-    do_check_true(r == "myVal");
+  r = await ss.has("myKey");
+  Assert.ok(!r);
+  r = await ss.set("myKey", "myVal");
+  Assert.ok(r); // Value was added
+  r = await ss.get("myKey");
+  Assert.equal(r, "myVal");
 
-    let o = { k1: "v1", k2: "v2" };
-    r = yield ss.set("myKey", o);
-    do_check_false(r); // Value was updated in-place
-    r = yield ss.get("myKey");
-    for (key of Object.keys(r))
-      do_check_true(r[key] == o[key]);
-    for (key of Object.keys(o))
-      do_check_true(r[key] == o[key]);
+  let o = { k1: "v1", k2: "v2" };
+  r = await ss.set("myKey", o);
+  Assert.ok(!r); // Value was updated in-place
+  r = await ss.get("myKey");
+  for (let key of Object.keys(r))
+    Assert.equal(r[key], o[key]);
+  for (let key of Object.keys(o))
+    Assert.equal(r[key], o[key]);
 
-    // Test nested async actions. Not recommended for the casual user because of
-    // the very specific order of finish vs. yield kWorkDone.
-    yield (function (finish) (SimpleStorage.spin (function () {
-      r = yield ss.remove("myKey");
-      do_check_true(r);
-      r = yield ss.remove("myKey");
-      do_check_false(r);
-      finish();
-      yield kWorkDone; // Remember, nothing is executed past that line
-    })));
-
-    r = yield ss.has("myKey");
-    do_check_false(r);
-    dump("\033[01;34m--- async api test is over\033[00m\n");
-    remainingThreads--;
-  });
+  r = await ss.has("myKey");
+  Assert.ok(!r);
+  dump("\033[01;34m--- async api test is over\033[00m\n");
+  remainingThreads--;
 }
 
-function run_tests () {
+add_task(async function run_tests() {
   remainingThreads++;
-  test_sync_api();
+  await test_sync_api();
 
-  let thread = Components.classes["@mozilla.org/thread-manager;1"]
-               .getService(Components.interfaces.nsIThreadManager)
-               .currentThread;
+  let thread = Services.tm.currentThread;
   while (remainingThreads) {
     thread.processNextEvent(true);
   }
 
   dump("\033[01;35m--- test is over\033[00m\n");
-}
-
-run_tests();
+});

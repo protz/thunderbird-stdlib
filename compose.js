@@ -49,10 +49,9 @@ var EXPORTED_SYMBOLS = [
   "getSignatureContentsForAccount",
 ];
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
 ChromeUtils.import("resource:///modules/mailServices.js");
 
@@ -330,7 +329,7 @@ function parse(aMimeLine) {
   let emails = {};
   let fullNames = {};
   let names = {};
-  let numAddresses = MailServices.headerParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
+  MailServices.headerParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
   return [names.value, emails.value];
 }
 
@@ -378,15 +377,15 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   cc = ccList.map((cc, i) => [cc, ccListEmailAddresses[i]]).
     filter((e, i) => e[1] != identityEmail);
   if (!isReplyToOwnMsg) {
-    cc = cc.concat
-      (recipients.map((r, i) => [r, recipientsEmailAddresses[i]]).
-        filter((e, i) => e[1] != identityEmail));
+    cc = cc.concat(recipients.map(
+      (r, i) => [r, recipientsEmailAddresses[i]]).filter(
+        (e, i) => e[1] != identityEmail));
   }
   bcc = bccList.map((bcc, i) => [bcc, bccListEmailAddresses]);
 
   let finish = function(to, cc, bcc) {
     let hashMap = {};
-    for (let [name, email] of to)
+    for (let [, email] of to)
       hashMap[email] = null;
     cc = cc.filter(function([name, email]) {
       let r = (email in hashMap);
@@ -432,10 +431,7 @@ function determineComposeHtml(aIdentity) {
   if (aIdentity) {
     return (aIdentity.composeHtml == Ci.nsIMsgCompFormat.HTML);
   }
-    return Cc["@mozilla.org/preferences-service;1"]
-            .getService(Ci.nsIPrefService)
-            .getBranch(null)
-            .getBoolPref("mail.compose_html");
+    return Services.prefs.getBoolPref("mail.compose_html");
 
 }
 

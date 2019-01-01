@@ -60,7 +60,6 @@ var EXPORTED_SYMBOLS = [
   "generateQI",
 ];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 ChromeUtils.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -273,7 +272,7 @@ function dateAsInMessageList(aDate) {
   return dateTimeFormatter.format(aDate);
 }
 
-
+// eslint-disable-next-line no-control-regex
 const RE_SANITIZE = /[\u0000-\u0008\u000b-\u000c\u000e-\u001f]/g;
 
 /**

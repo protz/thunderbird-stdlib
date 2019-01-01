@@ -45,13 +45,6 @@ var EXPORTED_SYMBOLS = [
   "getAddressBookFromUri", "saveEmailInAddressBook",
 ];
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
-
-const rdfService = Cc["@mozilla.org/rdf/rdf-service;1"]
-                   .getService(Ci.nsIRDFService);
 const abManager = Cc["@mozilla.org/abmanager;1"]
                   .getService(Ci.nsIAbManager);
 

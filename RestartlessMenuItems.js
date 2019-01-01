@@ -45,8 +45,6 @@
 
 var EXPORTED_SYMBOLS = ["RestartlessMenuItems"];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 let _menuItems = [];
@@ -55,8 +53,6 @@ function isThunderbird() {
   let APP_ID = Services.appinfo.QueryInterface(Ci.nsIXULRuntime).ID;
   return APP_ID == "{3550f703-e582-4d05-9a08-453d09bdfdc6}";
 }
-
-var global = this;
 
 /**
  * Adds a menuitem to a window.
@@ -206,7 +202,7 @@ var RestartlessMenuItems = {
     // more discoverable.
     if (isThunderbird()) {
       // Thunderbird-specific JSM
-      ChromeUtils.import("resource:///modules/iteratorUtils.jsm", global);
+      let {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
 
       // Push it to our list
       _menuItems.push(options);
@@ -237,9 +233,12 @@ var RestartlessMenuItems = {
       });
 
       // Un-patch all existing windows
-      if (found)
-        for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane")))
+      if (found) {
+        let {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", {});
+        for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane"))) {
           unMonkeyPatchWindow(w, _menuItems[index]);
+        }
+      }
 
       if (!keepArray) {
         // Pop out from our list

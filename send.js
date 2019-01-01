@@ -49,7 +49,7 @@ ChromeUtils.import("resource:///modules/MailUtils.js"); // for getFolderForURI
 ChromeUtils.import("resource:///modules/mailServices.js");
 
 const mCompType = Ci.nsIMsgCompType;
-const isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
+const isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 
 function importRelative(that, path) {
   try {
@@ -75,9 +75,6 @@ let Log = setupLogging(logRoot + ".Send");
  * @return {String} The URI for the folder. Use MailUtils.getFolderForURI.
  */
 function getArchiveFolderUriFor(identity, msgDate) {
-  let formatter = new Services.intl.DateTimeFormat(undefined, {
-    year: "numeric", month: "2-digit",
-  });
   let msgYear = msgDate.getFullYear().toString();
   let monthFolderName = msgYear + "-" + (msgDate.getMonth() + 1).toString().padStart(2, "0");
   let granularity = identity.archiveGranularity;
@@ -221,6 +218,7 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
  *  even copy it to the Sent folder. Warning: this one assumes that the "right"
  *  Archives folder already exists.
  */
+// eslint-disable-next-line complexity
 function sendMessage(aParams,
     { deliverType, compType },
     aBody,

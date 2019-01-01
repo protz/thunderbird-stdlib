@@ -58,8 +58,6 @@ var EXPORTED_SYMBOLS = [
   "msgHdrsModifyRaw",
 ];
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 // from mailnews/base/public/nsMsgFolderFlags.idl
 const nsMsgFolderFlags_SentMail = 0x00000200;
 const nsMsgFolderFlags_Drafts   = 0x00000400;
@@ -294,9 +292,7 @@ function msgHdrsDelete(msgHdrs) {
  * @return The window object for the main window.
  */
 function getMail3Pane() {
-  return Cc["@mozilla.org/appshell/window-mediator;1"]
-          .getService(Ci.nsIWindowMediator)
-          .getMostRecentWindow("mail:3pane");
+  return Services.wm.getMostRecentWindow("mail:3pane");
 }
 
 /**
@@ -473,7 +469,7 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
         GetMessageId(aMessageId) {
         },
         OnStopCopy(aStatus) {
-          if (NS_SUCCEEDED(aStatus)) {
+          if (Components.isSuccessCode(aStatus)) {
             dump("msgHdrModifyRaw: copied successfully\n");
             toDelete.push(msgHdr);
             tempFile.remove(false);
