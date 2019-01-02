@@ -45,7 +45,7 @@
 
 var EXPORTED_SYMBOLS = ["RestartlessMenuItems"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
 
 let _menuItems = [];
 

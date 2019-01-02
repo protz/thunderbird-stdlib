@@ -49,24 +49,21 @@ var EXPORTED_SYMBOLS = [
   "getSignatureContentsForAccount",
 ];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
-ChromeUtils.import("resource:///modules/mailServices.js");
+const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", null);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
+
+Cu.importGlobalProperties(["URL"]);
 
 function importRelative(that, path) {
-  try {
-    ChromeUtils.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
+  return ChromeUtils.import(new URL(path, that.__URI__), null);
 }
 
-importRelative(this, "misc.js");
-importRelative(this, "msgHdrUtils.js");
-importRelative(this, "../log.js");
+const {
+  combine, escapeHtml, generateQI, getDefaultIdentity, getIdentities, systemCharset,
+} = importRelative(this, "misc.js");
+const {msgHdrGetUri, getMail3Pane, msgHdrGetHeaders} = importRelative(this, "msgHdrUtils.js");
+const {logRoot, setupLogging} = importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot + ".Stdlib");
 

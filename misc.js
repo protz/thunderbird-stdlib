@@ -60,11 +60,11 @@ var EXPORTED_SYMBOLS = [
   "generateQI",
 ];
 
-ChromeUtils.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource:///modules/mailServices.js");
+const {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
 
 if (!Services.intl) {
   // That one doesn't belong to MailServices.
@@ -73,16 +73,8 @@ if (!Services.intl) {
                                      "nsIScriptableDateFormat");
 }
 
-function importRelative(that, path) {
-  try {
-    ChromeUtils.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
-}
-
-importRelative(this, "../log.js");
+Cu.importGlobalProperties(["URL"]);
+const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__), null);
 
 let Log = setupLogging(logRoot + ".Stdlib");
 

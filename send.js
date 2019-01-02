@@ -42,28 +42,25 @@
 
 var EXPORTED_SYMBOLS = ["sendMessage"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
-ChromeUtils.import("resource:///modules/MailUtils.js"); // for getFolderForURI
-ChromeUtils.import("resource:///modules/mailServices.js");
+const {MailUtils} = ChromeUtils.import("resource:///modules/MailUtils.js", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
 
 const mCompType = Ci.nsIMsgCompType;
 const isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 
+Cu.importGlobalProperties(["URL"]);
+
 function importRelative(that, path) {
-  try {
-    ChromeUtils.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
+  return ChromeUtils.import(new URL(path, that.__URI__), null);
 }
 
-importRelative(this, "misc.js");
-importRelative(this, "msgHdrUtils.js");
-importRelative(this, "compose.js");
-importRelative(this, "../log.js");
+const {generateQI, range} = importRelative(this, "misc.js");
+const {msgUriToMsgHdr} = importRelative(this, "msgHdrUtils.js");
+const {
+  determineComposeHtml, getEditorForIframe, plainTextToHtml, htmlToPlainText,
+  simpleWrap,
+} = importRelative(this, "compose.js");
+const {dumpCallStack, logRoot, setupLogging} = importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot + ".Send");
 
@@ -92,22 +89,6 @@ function getArchiveFolderUriFor(identity, msgDate) {
   if (granularity >= Ci.nsIMsgIdentity.perMonthArchiveFolders)
     folderUri += "/" + monthFolderName;
   return folderUri;
-}
-
-function wrapBody(t) {
-  let r =
-    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n" +
-    "<html>\n" +
-    "  <head>\n" +
-    "    <meta http-equiv=\"content-type\" content=\"text/html;\n" +
-    "      charset=ISO-8859-1\">\n" +
-    "  </head>\n" +
-    "  <body>" +
-    "    " + t + "\n" +
-    "  </body>\n" +
-    "</html>\n"
-  ;
-  return r;
 }
 
 /**

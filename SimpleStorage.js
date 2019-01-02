@@ -43,23 +43,14 @@
 
 var EXPORTED_SYMBOLS = ["SimpleStorage"];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const {Sqlite} = ChromeUtils.import("resource://gre/modules/Sqlite.jsm", null);
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", null);
+
+Cu.importGlobalProperties(["URL"]);
 
 let Log;
-
-function importRelative(that, path) {
-  try {
-    ChromeUtils.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
-}
-
 try {
-  importRelative(this, "../log.js");
+  const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__), null);
   Log = setupLogging(logRoot + ".SimpleStorage");
   Log.debug("Simple Storage loaded.");
 } catch (err) {

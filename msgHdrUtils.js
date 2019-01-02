@@ -66,23 +66,14 @@ const nsMsgFolderFlags_Inbox    = 0x00001000;
 
 const PR_WRONLY = 0x02;
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
-ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
-ChromeUtils.import("resource:///modules/gloda/utils.js");
-ChromeUtils.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource:///modules/mailServices.js");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
+const {MimeMessage, MsgHdrToMimeMessage} = ChromeUtils.import("resource:///modules/gloda/mimemsg.js", null);
+const {toXPCOMArray} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
 
-function importRelative(that, path) {
-  try {
-    ChromeUtils.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
-}
-
-importRelative(this, "misc.js");
+Cu.importGlobalProperties(["URL"]);
+const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__), null);
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
 XPCOMUtils.defineLazyGetter(MailServices, "messenger", function() {
@@ -259,7 +250,7 @@ function msgHdrsMarkAsRead(msgHdrs, read) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
   }
-  for (let [ uri, { folder, msgs } ] of entries(pending)) {
+  for (let [, { folder, msgs } ] of entries(pending)) {
     folder.markMessagesRead(msgs, read);
     folder.msgDatabase = null; /* don't leak */
   }
@@ -280,7 +271,7 @@ function msgHdrsDelete(msgHdrs) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
   }
-  for (let [ uri, { folder, msgs } ] of entries(pending)) {
+  for (let [, { folder, msgs } ] of entries(pending)) {
     folder.deleteMessages(msgs, getMail3Pane().msgWindow, false, false, null, true);
     folder.msgDatabase = null; /* don't leak */
   }
