@@ -1,0 +1,27 @@
+{
+  "name": "thunderbirdstdlib",
+  "version": "0.0.1",
+  "description": "Thunderbird Standard Library",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:protz/thunderbird-stdlib.git"
+  },
+  "bugs": {
+    "url": "https://github.com/protz/thunderbird-stdlib/issues"
+  },
+  "engines": {
+    "thunderbird": ">=60.0a1"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "5.9.0",
+    "eslint-plugin-mozilla": "1.0.0",
+    "eslint-plugin-no-unsanitized": "3.0.2",
+    "npm-run-all": "4.1.5"
+  },
+  "scripts": {
+    "test": "npm-run-all test:*",
+    "test:lint": "eslint ."
+  },
+  "license": "MPL-1.1"
+}
