@@ -38,31 +38,26 @@
  * ***** END LICENSE BLOCK ***** */
 
 /**
- * @fileoverview Provides a wrapper for easily adding and 
+ * @fileoverview Provides a wrapper for easily adding and
  *  removing menu items in a restartless fashion.
  * @author Jonathan Protzenko
  */
- 
-var EXPORTED_SYMBOLS = ['RestartlessMenuItems'];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
+var EXPORTED_SYMBOLS = ["RestartlessMenuItems"];
 
-Cu.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
 
 let _menuItems = [];
 
-function isThunderbird()
-{
+function isThunderbird() {
   let APP_ID = Services.appinfo.QueryInterface(Ci.nsIXULRuntime).ID;
   return APP_ID == "{3550f703-e582-4d05-9a08-453d09bdfdc6}";
 }
 
-var global = this;
-
 /**
  * Adds a menuitem to a window.
  * @param w {nsIDOMWindow} A window to patch.
- * @param loadedAlready {bool} The window above is fully loaded, 
+ * @param loadedAlready {bool} The window above is fully loaded,
  *  or we should wait to be loaded.
  * @param options {Object} Options for the <tt>menuitem</tt>, with the following parameters:
  * @param options.id {String} (optional) An id for the <tt>menuitem</tt> in taskPopup menu, this should be namespaced, you should either fill id or idAppMenu or both.
@@ -75,7 +70,7 @@ var global = this;
  * @param options.image {String} (optional) An URL for the <tt>menuitem</tt>.
  */
 function monkeyPatchWindow(w, loadedAlready, options) {
-  let doIt = function () {
+  let doIt = function() {
 	let id = options.id;
 	let idAppMenu = options.idAppMenu;
 
@@ -95,7 +90,7 @@ function monkeyPatchWindow(w, loadedAlready, options) {
         )
         : false;
     };
-    
+
     let onCmd = function() {
       openTabUrl() || options.onCommand && options.onCommand();
     };
@@ -108,14 +103,14 @@ function monkeyPatchWindow(w, loadedAlready, options) {
   if (loadedAlready)
     doIt();
   else
-    w.addEventListener("load", doIt, false);
+    w.addEventListener("load", doIt);
 }
 
 function addMenuItem(w,onCmd,options,id,taskPopup)
 {
 	let oldMenuitem = w.document.getElementById(id);
     let menuitem = w.document.createElement("menuitem");
-    menuitem.addEventListener("command", onCmd, false);
+    menuitem.addEventListener("command", onCmd);
     menuitem.setAttribute("label", options.label);
     menuitem.setAttribute("id", id);
     if (options.accesskey)
@@ -126,16 +121,16 @@ function addMenuItem(w,onCmd,options,id,taskPopup)
       menuitem.setAttribute("class", "menuitem-iconic");
       menuitem.style.listStyleImage = "url('" + options.image + "')";
     }
-	if (!oldMenuitem)
-	{
-	  if (taskPopup)
-	    taskPopup.appendChild(menuitem);
-	}
-	else
-	{
-	  if (taskPopup)
-		taskPopup.replaceChild(menuitem, oldMenuitem);
-	}
+    if (!oldMenuitem)
+    {
+      if (taskPopup)
+        taskPopup.appendChild(menuitem);
+    }
+    else
+    {
+      if (taskPopup)
+        taskPopup.replaceChild(menuitem, oldMenuitem);
+    }
 }
 
 /**
@@ -160,7 +155,7 @@ function unMonkeyPatchWindow(w, options) {
 
   // Close all tab with options.url URL
   let removeTabUrl = function() {
-    let tabMode = tabmail.tabModes["contentTab"];
+    let tabMode = tabmail.tabModes.contentTab;
     let shouldSwitchToFunc = tabMode.shouldSwitchTo ||
                             tabMode.tabType.shouldSwitchTo;
 
@@ -188,23 +183,23 @@ function unMonkeyPatchWindow(w, options) {
  * @prop register Start listening to notifications.
  * @prop unregister Stop listening to notifications.
  */
-function monkeyPatchWindowObserver() {};
+function monkeyPatchWindowObserver() {}
 
 monkeyPatchWindowObserver.prototype = {
-  observe: function (aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic == "domwindowopened") {
       aSubject.QueryInterface(Ci.nsIDOMWindow);
       for (let aMenuItem of _menuItems)
         monkeyPatchWindow(aSubject.window, false, aMenuItem);
     }
   },
-  register: function() {
+  register() {
     Services.ww.registerNotification(this);
   },
-  unregister: function() {
+  unregister() {
     Services.ww.unregisterNotification(this);
-  }
-}
+  },
+};
 
 /**
  * This is the observer Object.
@@ -213,20 +208,20 @@ let monkeyPatchFutureWindow = new monkeyPatchWindowObserver();
 
 /**
  * This is the public interface of the RestartlessMenuItems module.
- * 
- * @prop add Adds a parameterized <tt>menuitem</tt> to existing and 
+ *
+ * @prop add Adds a parameterized <tt>menuitem</tt> to existing and
  *  newly created windows.
- * @prop remove Removes an identified <tt>menuitem</tt> from 
+ * @prop remove Removes an identified <tt>menuitem</tt> from
  *  existing window, and will not add to new ones.
  * @prop removeAll Removes all the <tt>menuitem</tt>s currently added.
  */
 var RestartlessMenuItems = {
-  add: function _RestartlessMenuItems_add (options) {
+  add: function _RestartlessMenuItems_add(options) {
     // For Thunderbird, since there's no URL bar, we add a menu item to make it
     // more discoverable.
     if (isThunderbird()) {
       // Thunderbird-specific JSM
-      Cu.import("resource:///modules/iteratorUtils.jsm", global);
+      let {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
 
       // Push it to our list
       _menuItems.push(options);
@@ -238,28 +233,31 @@ var RestartlessMenuItems = {
         monkeyPatchWindow(w.window, true, options);
       }
 
-      // Patch all future windows 
+      // Patch all future windows
       // with our list of menuItems
       if (_menuItems.length == 1)
         monkeyPatchFutureWindow.register();
     }
   },
 
-  remove: function _RestartlessMenuItems_remove (options, keepArray) {
+  remove: function _RestartlessMenuItems_remove(options, keepArray) {
     if (isThunderbird()) {
       // Find the menuitem in our list by id
       let found = false;
       let index = -1;
-      found = _menuItems.some( function isOurMenuItem (element, arrayIndex){
+      found = _menuItems.some( function isOurMenuItem(element, arrayIndex) {
         if (element.id == options.id)
           index = arrayIndex;
         return (element.id == options.id);
       });
-      
+
       // Un-patch all existing windows
-      if (found)
-        for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane")))
+      if (found) {
+        let {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", {});
+        for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane"))) {
           unMonkeyPatchWindow(w, _menuItems[index]);
+        }
+      }
 
       if (!keepArray) {
         // Pop out from our list
@@ -273,7 +271,7 @@ var RestartlessMenuItems = {
     }
   },
 
-  removeAll: function _RestartlessMenuItems_removeAll () {
+  removeAll: function _RestartlessMenuItems_removeAll() {
     if (isThunderbird()) {
       // Remove all added menuitems
       for (let aMenuItem of _menuItems)

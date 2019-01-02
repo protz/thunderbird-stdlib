@@ -43,22 +43,20 @@
 
 var EXPORTED_SYMBOLS = [
   // Low-level XPCOM boring stuff
-  'msgHdrToMessageBody', 'msgHdrToNeckoURL', 'msgHdrGetTags', 'msgUriToMsgHdr',
-  'msgHdrGetUri', 'msgHdrFromNeckoUrl', 'msgHdrSetTags',
+  "msgHdrToMessageBody", "msgHdrToNeckoURL", "msgHdrGetTags", "msgUriToMsgHdr",
+  "msgHdrGetUri", "msgHdrFromNeckoUrl", "msgHdrSetTags",
   // Quickly identify a message
-  'msgHdrIsDraft', 'msgHdrIsSent', 'msgHdrIsArchive', 'msgHdrIsInbox',
-  'msgHdrIsRss', 'msgHdrIsNntp', 'msgHdrIsJunk',
+  "msgHdrIsDraft", "msgHdrIsSent", "msgHdrIsArchive", "msgHdrIsInbox",
+  "msgHdrIsRss", "msgHdrIsNntp", "msgHdrIsJunk",
   // Actions on a set of message headers
-  'msgHdrsMarkAsRead', 'msgHdrsArchive', 'msgHdrsDelete',
+  "msgHdrsMarkAsRead", "msgHdrsArchive", "msgHdrsDelete",
   // Doesn't really belong here
-  'getMail3Pane',
+  "getMail3Pane",
   // Higher-level functions
-  'msgHdrGetHeaders',
+  "msgHdrGetHeaders",
   // Modify messages, raw.
-  'msgHdrsModifyRaw',
-]
-
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+  "msgHdrsModifyRaw",
+];
 
 // from mailnews/base/public/nsMsgFolderFlags.idl
 const nsMsgFolderFlags_SentMail = 0x00000200;
@@ -68,17 +66,17 @@ const nsMsgFolderFlags_Inbox    = 0x00001000;
 
 const PR_WRONLY = 0x02;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for defineLazyServiceGetter
-Cu.import("resource:///modules/gloda/mimemsg.js");
-Cu.import("resource:///modules/gloda/utils.js");
-Cu.import("resource:///modules/iteratorUtils.jsm"); // for toXPCOMArray
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource:///modules/mailServices.js");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
+const {MimeMessage, MsgHdrToMimeMessage} = ChromeUtils.import("resource:///modules/gloda/mimemsg.js", null);
+const {toXPCOMArray} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
 
-XPCOMUtils.importRelative(this, "misc.js");
+Cu.importGlobalProperties(["URL"]);
+const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__), null);
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
-XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
+XPCOMUtils.defineLazyGetter(MailServices, "messenger", function() {
   return Cc["@mozilla.org/messenger;1"].createInstance(Ci.nsIMessenger);
 });
 
@@ -87,7 +85,7 @@ XPCOMUtils.defineLazyGetter(MailServices, "messenger", function () {
  * @param {nsIMsgDbHdr} aMsg The message
  * @return {String}
  */
-function msgHdrGetUri (aMsg) {
+function msgHdrGetUri(aMsg) {
   return aMsg.folder.getUriForMsg(aMsg);
 }
 
@@ -101,7 +99,7 @@ function msgUriToMsgHdr(aUri) {
     let messageService = MailServices.messenger.messageServiceFromURI(aUri);
     return messageService.messageURIToMsgHdr(aUri);
   } catch (e) {
-    dump("Unable to get "+aUri+" — returning null instead");
+    dump("Unable to get " + aUri + " — returning null instead");
     return null;
   }
 }
@@ -170,7 +168,7 @@ function msgHdrToMessageBody(aMessageHeader, aStripHtml, aLength) {
                                       out ACString aContentType);
   */
   return folder.getMsgTextFromStream(
-    listener.inputStream, aMessageHeader.Charset, 2*aLength, aLength, false, aStripHtml, { });
+    listener.inputStream, aMessageHeader.Charset, 2 * aLength, aLength, false, aStripHtml, { });
 }
 
 /**
@@ -194,9 +192,9 @@ function msgHdrToNeckoURL(aMsgHdr) {
  * @param {nsIMsgDbHdr} aMsgHdr the msgHdr whose tags we want
  * @return {nsIMsgTag array} a list of tag objects
  */
-function msgHdrGetTags (aMsgHdr) {
+function msgHdrGetTags(aMsgHdr) {
   let keywords = aMsgHdr.getStringProperty("keywords");
-  let keywordList = keywords.split(' ');
+  let keywordList = keywords.split(" ");
   let keywordMap = {};
   for (let keyword of keywordList) {
     keywordMap[keyword] = true;
@@ -213,7 +211,7 @@ function msgHdrGetTags (aMsgHdr) {
  * @param {nsIMsgDBHdr} aMsgHdr
  * @param {nsIMsgTag array} aTags
  */
-function msgHdrSetTags (aMsgHdr, aTags) {
+function msgHdrSetTags(aMsgHdr, aTags) {
   let oldTagList = msgHdrGetTags(aMsgHdr);
   let oldTags = {}; // hashmap
   for (let tag of oldTagList)
@@ -247,12 +245,12 @@ function msgHdrsMarkAsRead(msgHdrs, read) {
     if (!pending[msgHdr.folder.URI]) {
       pending[msgHdr.folder.URI] = {
         folder: msgHdr.folder,
-        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray)
+        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray),
       };
     }
-    pending[msgHdr.folder.URI].msgs.appendElement(msgHdr, false);
+    pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
   }
-  for (let [ uri, { folder, msgs } ] of entries(pending)) {
+  for (let [, { folder, msgs } ] of entries(pending)) {
     folder.markMessagesRead(msgs, read);
     folder.msgDatabase = null; /* don't leak */
   }
@@ -268,12 +266,12 @@ function msgHdrsDelete(msgHdrs) {
     if (!pending[msgHdr.folder.URI]) {
       pending[msgHdr.folder.URI] = {
         folder: msgHdr.folder,
-        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray)
+        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray),
       };
     }
-    pending[msgHdr.folder.URI].msgs.appendElement(msgHdr, false);
+    pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
   }
-  for (let [ uri, { folder, msgs } ] of entries(pending)) {
+  for (let [, { folder, msgs } ] of entries(pending)) {
     folder.deleteMessages(msgs, getMail3Pane().msgWindow, false, false, null, true);
     folder.msgDatabase = null; /* don't leak */
   }
@@ -285,9 +283,7 @@ function msgHdrsDelete(msgHdrs) {
  * @return The window object for the main window.
  */
 function getMail3Pane() {
-  return Cc["@mozilla.org/appshell/window-mediator;1"]
-          .getService(Ci.nsIWindowMediator)
-          .getMostRecentWindow("mail:3pane");
+  return Services.wm.getMostRecentWindow("mail:3pane");
 }
 
 /**
@@ -353,30 +349,30 @@ HeaderHandler.prototype = {
 function createStreamListener(k) {
   return {
     _data: "",
-    _stream : null,
+    _stream: null,
 
     QueryInterface:
-      XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
+      generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
 
     // nsIRequestObserver
-    onStartRequest: function(aRequest, aContext) {
+    onStartRequest(aRequest, aContext) {
     },
-    onStopRequest: function(aRequest, aContext, aStatusCode) {
+    onStopRequest(aRequest, aContext, aStatusCode) {
       try {
         k(this._data);
       } catch (e) {
-        dump("Error inside stream listener:\n"+e+"\n");
+        dump("Error inside stream listener:\n" + e + "\n");
       }
     },
 
     // nsIStreamListener
-    onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
+    onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
       if (this._stream == null) {
         this._stream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
         this._stream.init(aInputStream);
       }
       this._data += this._stream.read(aCount);
-    }
+    },
   };
 }
 
@@ -392,7 +388,7 @@ function msgHdrGetHeaders(aMsgHdr, k) {
   let messageService = MailServices.messenger.messageServiceFromURI(uri);
 
   let fallback = () =>
-    MsgHdrToMimeMessage(aMsgHdr, null, function (aMsgHdr, aMimeMsg) {
+    MsgHdrToMimeMessage(aMsgHdr, null, function(aMsgHdr, aMimeMsg) {
       k(aMimeMsg);
     }, true, {
       partsOnDemand: true,
@@ -412,7 +408,7 @@ function msgHdrGetHeaders(aMsgHdr, k) {
           if (i < 0)
             continue;
           let k = line.substring(0, i).toLowerCase();
-          let v = line.substring(i+1).trim();
+          let v = line.substring(i + 1).trim();
           if (!(k in obj))
             obj[k] = [];
           obj[k].push(v);
@@ -453,40 +449,40 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
       msgHdr.flags,
       msgHdr.getStringProperty("keywords"),
       {
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIMsgCopyServiceListener]),
+        QueryInterface: generateQI([Ci.nsIMsgCopyServiceListener]),
 
-        OnStartCopy: function () {
+        OnStartCopy() {
         },
-        OnProgress: function (aProgress, aProgressMax) {
+        OnProgress(aProgress, aProgressMax) {
         },
-        SetMessageKey: function (aKey) {
+        SetMessageKey(aKey) {
         },
-        GetMessageId: function (aMessageId) {
+        GetMessageId(aMessageId) {
         },
-        OnStopCopy: function (aStatus) {
-          if (NS_SUCCEEDED(aStatus)) {
+        OnStopCopy(aStatus) {
+          if (Components.isSuccessCode(aStatus)) {
             dump("msgHdrModifyRaw: copied successfully\n");
             toDelete.push(msgHdr);
             tempFile.remove(false);
           }
           copyNext();
-        }
+        },
       },
       null
     );
   };
 
   let count = aMsgHdrs.length;
-  let tick = function () {
+  let tick = function() {
     if (--count == 0)
       copyNext();
-  }
+  };
 
   for (let aMsgHdr of aMsgHdrs) {
     let msgHdr = aMsgHdr;
     let uri = msgHdrGetUri(msgHdr);
     let messageService = MailServices.messenger.messageServiceFromURI(uri);
-    messageService.streamMessage(uri, createStreamListener(function (aRawString) {
+    messageService.streamMessage(uri, createStreamListener(function(aRawString) {
       let data = aTransformer(aRawString);
       if (!data) {
         dump("msgHdrModifyRaw: no data, aborting\n");
@@ -504,7 +500,7 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
       stream.close();
 
       dump("msgHdrModifyRaw: wrote to file\n");
-      toCopy.push({ tempFile: tempFile, msgHdr: msgHdr });
+      toCopy.push({ tempFile, msgHdr });
       tick();
     }), null, null, false, "");
   }

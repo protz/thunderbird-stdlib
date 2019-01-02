@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/protz/thunderbird-stdlib.svg?branch=master)](https://travis-ci.com/protz/thunderbird-stdlib)
+
 Thunderbird Standard Library
 ============================
 

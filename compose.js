@@ -41,26 +41,31 @@
  */
 
 var EXPORTED_SYMBOLS = [
-  'composeInIframe', 'getEditorForIframe',
-  'quoteMsgHdr', 'citeString',
-  'htmlToPlainText', 'simpleWrap',
-  'plainTextToHtml', 'replyAllParams',
-  'determineComposeHtml', 'composeMessageTo',
-  'getSignatureContentsForAccount',
-]
+  "composeInIframe", "getEditorForIframe",
+  "quoteMsgHdr", "citeString",
+  "htmlToPlainText", "simpleWrap",
+  "plainTextToHtml", "replyAllParams",
+  "determineComposeHtml", "composeMessageTo",
+  "getSignatureContentsForAccount",
+];
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
+const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", null);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI, defineLazyServiceGetter
-Cu.import("resource://gre/modules/NetUtil.jsm");
-Cu.import("resource:///modules/gloda/mimemsg.js");
-Cu.import("resource:///modules/mailServices.js");
+Cu.importGlobalProperties(["URL"]);
 
-XPCOMUtils.importRelative(this, "misc.js");
-XPCOMUtils.importRelative(this, "msgHdrUtils.js");
-XPCOMUtils.importRelative(this, "../log.js");
+function importRelative(that, path) {
+  return ChromeUtils.import(new URL(path, that.__URI__), null);
+}
 
-let Log = setupLogging(logRoot+".Stdlib");
+const {
+  combine, escapeHtml, generateQI, getDefaultIdentity, getIdentities, systemCharset,
+} = importRelative(this, "misc.js");
+const {msgHdrGetUri, getMail3Pane, msgHdrGetHeaders} = importRelative(this, "msgHdrUtils.js");
+const {logRoot, setupLogging} = importRelative(this, "../log.js");
+
+let Log = setupLogging(logRoot + ".Stdlib");
 
 /**
  * Use the mailnews component to stream a message, and process it in a way
@@ -82,22 +87,22 @@ function quoteMsgHdr(aMsgHdr, k) {
                          .createInstance(Ci.nsIScriptableUnicodeConverter);
   unicodeConverter.charset = "UTF-8";
   let listener = {
-    /**@ignore*/
-    setMimeHeaders: function () {
+    /** @ignore*/
+    setMimeHeaders() {
     },
 
-    /**@ignore*/
-    onStartRequest: function (/* nsIRequest */ aRequest, /* nsISupports */ aContext) {
+    /** @ignore*/
+    onStartRequest(/* nsIRequest */ aRequest, /* nsISupports */ aContext) {
     },
 
-    /**@ignore*/
-    onStopRequest: function (/* nsIRequest */ aRequest, /* nsISupports */ aContext, /* int */ aStatusCode) {
+    /** @ignore*/
+    onStopRequest(/* nsIRequest */ aRequest, /* nsISupports */ aContext, /* int */ aStatusCode) {
       let data = chunks.join("");
       k(data);
     },
 
-    /**@ignore*/
-    onDataAvailable: function (/* nsIRequest */ aRequest, /* nsISupports */ aContext,
+    /** @ignore*/
+    onDataAvailable(/* nsIRequest */ aRequest, /* nsISupports */ aContext,
         /* nsIInputStream */ aStream, /* int */ aOffset, /* int */ aCount) {
       // Fortunately, we have in Gecko 2.0 a nice wrapper
       let data = NetUtil.readInputStreamToString(aStream, aCount);
@@ -111,8 +116,8 @@ function quoteMsgHdr(aMsgHdr, k) {
       chunks.push(unicodeConverter.convertFromByteArray(array, array.length));
     },
 
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIStreamListener,
-      Ci.nsIMsgQuotingOutputStreamListener, Ci.nsIRequestObserver])
+    QueryInterface: generateQI([Ci.nsISupports, Ci.nsIStreamListener,
+      Ci.nsIMsgQuotingOutputStreamListener, Ci.nsIRequestObserver]),
   };
   // Here's what we want to stream...
   let msgUri = msgHdrGetUri(aMsgHdr);
@@ -168,16 +173,15 @@ function composeInIframe(aIframe, {
  */
 function citeString(aStr) {
   let l = aStr.length;
-  return aStr.replace("\n", function (match, offset, str) {
+  return aStr.replace("\n", function(match, offset, str) {
     // http://mxr.mozilla.org/comm-central/source/mozilla/editor/libeditor/text/nsInternetCiter.cpp#96
     if (offset < l - 1) {
-      if (str[offset+1] != ">" && str[offset+1] != "\n" && str[offset+1] != "\r")
+      if (str[offset + 1] != ">" && str[offset + 1] != "\n" && str[offset + 1] != "\r")
         return "\n> ";
-      else
-        return "\n>";
-    } else {
-      return match;
+      return "\n>";
     }
+      return match;
+
   }, "g");
 }
 
@@ -204,8 +208,7 @@ function simpleWrap(txt, width) {
   function maybeEscape(line) {
     if (line.indexOf("From") === 0 || line.indexOf(">") === 0)
       return (" " + line);
-    else
-      return line;
+    return line;
   }
 
   /**
@@ -224,26 +227,26 @@ function simpleWrap(txt, width) {
       if (i > 0) {
         // This includes the trailing space that indicates that we are wrapping
         //  a long line with format=flowed.
-        soFar.push(maybeEscape(remaining.substring(0, i+1)));
-        return splitLongLine(soFar, remaining.substring(i+1, remaining.length));
-      } else {
+        soFar.push(maybeEscape(remaining.substring(0, i + 1)));
+        return splitLongLine(soFar, remaining.substring(i + 1, remaining.length));
+      }
         // No word boundary, break at the first space
         let j = remaining.indexOf(" ");
         if (j > 0) {
           // Same remark about the trailing space.
-          soFar.push(maybeEscape(remaining.substring(0, j+1)));
-          return splitLongLine(soFar, remaining.substring(j+1, remaining.length));
-        } else {
+          soFar.push(maybeEscape(remaining.substring(0, j + 1)));
+          return splitLongLine(soFar, remaining.substring(j + 1, remaining.length));
+        }
           // Make sure no one interprets this as a line continuation.
           soFar.push(remaining.trimRight());
           return soFar.join("\n");
-        }
-      }
-    } else {
+
+
+    }
       // Same remark about the trailing space.
       soFar.push(maybeEscape(remaining.trimRight()));
       return soFar.join("\n");
-    }
+
   }
 
   let lines = txt.split(/\r?\n/);
@@ -283,12 +286,12 @@ function htmlToPlainText(aHtml) {
 /**
  * @ignore
  */
-function citeLevel (line) {
+function citeLevel(line) {
   let i;
   for (i = 0; line[i] == ">" && i < line.length; ++i)
     ; // nop
   return i;
-};
+}
 
 /**
  * Just try to convert quoted lines back to HTML markup (&lt;blockquote&gt;s).
@@ -306,7 +309,7 @@ function plainTextToHtml(txt) {
         newLines.push('<blockquote type="cite">');
     if (newLevel < level)
       for (let i = newLevel; i < level; ++i)
-        newLines.push('</blockquote>');
+        newLines.push("</blockquote>");
     let newLine = line[newLevel] == " "
       ? escapeHtml(line.substring(newLevel + 1, line.length))
       : escapeHtml(line.substring(newLevel, line.length))
@@ -323,7 +326,7 @@ function parse(aMimeLine) {
   let emails = {};
   let fullNames = {};
   let names = {};
-  let numAddresses = MailServices.headerParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
+  MailServices.headerParser.parseHeadersWithArray(aMimeLine, emails, names, fullNames);
   return [names.value, emails.value];
 }
 
@@ -371,31 +374,31 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
   cc = ccList.map((cc, i) => [cc, ccListEmailAddresses[i]]).
     filter((e, i) => e[1] != identityEmail);
   if (!isReplyToOwnMsg) {
-    cc = cc.concat
-      (recipients.map((r, i) => [r, recipientsEmailAddresses[i]]).
-        filter((e, i) => e[1] != identityEmail));
+    cc = cc.concat(recipients.map(
+      (r, i) => [r, recipientsEmailAddresses[i]]).filter(
+        (e, i) => e[1] != identityEmail));
   }
   bcc = bccList.map((bcc, i) => [bcc, bccListEmailAddresses]);
 
-  let finish = function (to, cc, bcc) {
+  let finish = function(to, cc, bcc) {
     let hashMap = {};
-    for (let [name, email] of to)
+    for (let [, email] of to)
       hashMap[email] = null;
-    cc = cc.filter(function ([name, email]) {
+    cc = cc.filter(function([name, email]) {
       let r = (email in hashMap);
       hashMap[email] = null;
-      return !r
+      return !r;
     });
-    bcc = bcc.filter(function ([name, email]) {
+    bcc = bcc.filter(function([name, email]) {
       let r = (email in hashMap);
       hashMap[email] = null;
-      return !r
+      return !r;
     });
-    k({ to: to, cc: cc, bcc: bcc });
-  }
+    k({ to, cc, bcc });
+  };
 
   // Do we have a Reply-To header?
-  msgHdrGetHeaders(aMsgHdr, function (aHeaders) {
+  msgHdrGetHeaders(aMsgHdr, function(aHeaders) {
     if (aHeaders.has("reply-to")) {
       let [names, emails] = parse(aHeaders.get("reply-to"));
       emails = emails.map(email => email.toLowerCase());
@@ -424,12 +427,9 @@ function determineComposeHtml(aIdentity) {
 
   if (aIdentity) {
     return (aIdentity.composeHtml == Ci.nsIMsgCompFormat.HTML);
-  } else {
-    return Cc["@mozilla.org/preferences-service;1"]
-            .getService(Ci.nsIPrefService)
-            .getBranch(null)
-            .getBoolPref("mail.compose_html");
   }
+    return Services.prefs.getBoolPref("mail.compose_html");
+
 }
 
 /**
@@ -442,7 +442,7 @@ function composeMessageTo(aEmail, aDisplayedFolder) {
                .createInstance(Ci.nsIMsgCompFields);
   let params = Cc["@mozilla.org/messengercompose/composeparams;1"]
                .createInstance(Ci.nsIMsgComposeParams);
-  fields.to = aEmail
+  fields.to = aEmail;
   params.type = Ci.nsIMsgCompType.New;
   params.format = Ci.nsIMsgCompFormat.Default;
   if (aDisplayedFolder) {
@@ -477,8 +477,8 @@ function getSignatureContentsForAccount(aIdentity) {
       try {
         cstream.init(fstream, charset, 1024, replacementChar);
       } catch (e) {
-        Log.error("ConverterInputStream init error: "+e+
-                  "\n charset: "+charset+"\n");
+        Log.error("ConverterInputStream init error: " + e +
+                  "\n charset: " + charset + "\n");
         cstream.init(fstream, "UTF-8", 1024, replacementChar);
       }
       let str = {};
@@ -489,14 +489,13 @@ function getSignatureContentsForAccount(aIdentity) {
         signature = htmlToPlainText(signature);
       }
     } catch (e) {
-      Log.error("Signature file stream error: "+e+"\n");
+      Log.error("Signature file stream error: " + e + "\n");
     }
     cstream.close();
     fstream.close();
     // required for stripSignatureIfNeeded working properly
     signature = signature.replace(/\r?\n/g, "\n");
-  }
-  else {
+  } else {
     signature = aIdentity.htmlSigFormat
       ? htmlToPlainText(aIdentity.htmlSigText)
       : aIdentity.htmlSigText;
