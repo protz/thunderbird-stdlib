@@ -41,29 +41,17 @@
  * @author Jonathan Protzenko
  */
 
-var EXPORTED_SYMBOLS = ['SimpleStorage']
+var EXPORTED_SYMBOLS = ["SimpleStorage"];
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
+const {Sqlite} = ChromeUtils.import("resource://gre/modules/Sqlite.jsm", null);
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", null);
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
+Cu.importGlobalProperties(["URL"]);
 
 let Log;
-
-function importRelative(that, path) {
-  try {
-    Cu.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
-}
-
 try {
-  importRelative(this, "../log.js");
-  Log = setupLogging(logRoot+".SimpleStorage");
+  const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__), null);
+  Log = setupLogging(logRoot + ".SimpleStorage");
   Log.debug("Simple Storage loaded.");
 } catch (err) {
   Log = {error: () => {}, debug: () => {}};
@@ -81,7 +69,7 @@ var SimpleStorage = {
   async openConnection() {
     if (!this._dbConnection) {
       this._dbConnection = await Sqlite.openConnection({
-        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_SIMPLE_STORAGE)
+        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_SIMPLE_STORAGE),
       });
     }
   },
@@ -119,7 +107,7 @@ var SimpleStorage = {
         "INSERT INTO #1 (key, value) VALUES (:key, :value)";
 
       await db.execute(query.replace("#1", tableName), {
-        key, value: JSON.stringify({ value })
+        key, value: JSON.stringify({ value }),
       });
     });
   },

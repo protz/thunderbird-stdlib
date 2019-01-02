@@ -43,29 +43,28 @@
 
 var EXPORTED_SYMBOLS = [
   // Identity management helpers
-  'gIdentities', 'fillIdentities', 'getIdentities', 'getDefaultIdentity', 'getIdentityForEmail',
+  "gIdentities", "fillIdentities", "getIdentities", "getDefaultIdentity", "getIdentityForEmail",
   // JS programming helpers
-  'range', 'MixIn', 'combine', 'entries',
+  "range", "MixIn", "combine", "entries",
   // XPCOM helpers
-  'NS_FAILED', 'NS_SUCCEEDED',
+  "NS_FAILED", "NS_SUCCEEDED",
   // Various formatting helpers
-  'dateAsInMessageList', 'escapeHtml', 'sanitize', 'parseMimeLine',
+  "dateAsInMessageList", "escapeHtml", "sanitize", "parseMimeLine",
   // Useful for web content
-  'encodeUrlParameters', 'decodeUrlParameters',
+  "encodeUrlParameters", "decodeUrlParameters",
   // Character set helpers
-  'systemCharset',
+  "systemCharset",
   // Platform-specific idioms
-  'isOSX', 'isWindows', 'isAccel',
+  "isOSX", "isWindows", "isAccel",
   // Compatible with TB60
-  'generateQI'
-]
+  "generateQI",
+];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-Cu.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
-Cu.import("resource://gre/modules/XPCOMUtils.jsm"); // for generateQI
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/AppConstants.jsm");
-Cu.import("resource:///modules/mailServices.js");
+const {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", null);
+const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
 
 if (!Services.intl) {
   // That one doesn't belong to MailServices.
@@ -74,23 +73,15 @@ if (!Services.intl) {
                                      "nsIScriptableDateFormat");
 }
 
-function importRelative(that, path) {
-  try {
-    Cu.import(new URL(path, that.__URI__));
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.importRelative(that, path);
-  }
-}
+Cu.importGlobalProperties(["URL"]);
+const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__), null);
 
-importRelative(this, "../log.js");
-
-let Log = setupLogging(logRoot+".Stdlib");
+let Log = setupLogging(logRoot + ".Stdlib");
 
 let isOSX = AppConstants.platform === "macosx";
 let isWindows = AppConstants.platform === "win";
 
-function isAccel (event) {
+function isAccel(event) {
   return isOSX && event.metaKey || event.ctrlKey;
 }
 
@@ -180,12 +171,12 @@ function fillIdentities(aSkipNntp) {
   for (let currentIdentity of getIdentities(aSkipNntp)) {
     gIdentities[currentIdentity.identity.email] = currentIdentity.identity;
     if (currentIdentity.isDefault) {
-      gIdentities["default"] = currentIdentity.identity;
+      gIdentities.default = currentIdentity.identity;
     }
   }
 
-  if(!("default" in gIdentities)) {
-    gIdentities["default"] = getIdentities()[0].identity;
+  if (!("default" in gIdentities)) {
+    gIdentities.default = getIdentities()[0].identity;
   }
 }
 
@@ -218,13 +209,10 @@ function getIdentities(aSkipNntpIdentities = true) {
   }
   if (identities.length == 0) {
     Log.warn("Didn't find any identities!");
-  }
-  else {
-    if (!identities.some(x => x.isDefault)) {
+  } else if (!identities.some(x => x.isDefault)) {
       Log.warn("Didn't find any default key - mark the first identity as default!");
       identities[0].isDefault = true;
     }
-  }
   return identities;
 }
 
@@ -271,12 +259,12 @@ function dateAsInMessageList(aDate) {
     // Thunderbird 58 & earlier.
     dateTimeFormatter = Services.intl.createDateTimeFormat(undefined, format);
   } else {
-    dateTimeFormatter = new Services.intl.DateTimeFormat(undefined, format)
+    dateTimeFormatter = new Services.intl.DateTimeFormat(undefined, format);
   }
   return dateTimeFormatter.format(aDate);
 }
 
-
+// eslint-disable-next-line no-control-regex
 const RE_SANITIZE = /[\u0000-\u0008\u000b-\u000c\u000e-\u001f]/g;
 
 /**
@@ -316,7 +304,7 @@ function escapeHtml(s) {
  *  empty array in case aMimeLine is empty?
  * @return {Array} a list of { email, name } objects
  */
-function parseMimeLine (aMimeLine, aDontFix) {
+function parseMimeLine(aMimeLine, aDontFix) {
   if (aMimeLine == null) {
     Log.debug("Empty aMimeLine?!!");
     return [];
@@ -334,8 +322,7 @@ function parseMimeLine (aMimeLine, aDontFix) {
     });
   else if (aDontFix)
     return [];
-  else
-    return [{ email: "", name: "-", fullName: "-" }];
+  return [{ email: "", name: "-", fullName: "-" }];
 }
 
 /**
@@ -347,7 +334,7 @@ function parseMimeLine (aMimeLine, aDontFix) {
 function encodeUrlParameters(aObj) {
   let kv = [];
   for (let [k, v] of entries(aObj)) {
-    kv.push(k+"="+encodeURIComponent(v));
+    kv.push(k + "=" + encodeURIComponent(v));
   }
   return kv.join("&");
 }
@@ -362,7 +349,7 @@ function decodeUrlParameters(aStr) {
   let params = {};
   let i = aStr.indexOf("?");
   if (i >= 0) {
-    let query = aStr.substring(i+1, aStr.length);
+    let query = aStr.substring(i + 1, aStr.length);
     let keyVals = query.split("&");
     for (let keyVal of keyVals) {
       let [key, val] = keyVal.split("=");
@@ -391,8 +378,7 @@ function systemCharset() {
       charset = "CP" + codePage;
     }
     registry.close();
-  }
-  else {
+  } else {
     let env = Cc["@mozilla.org/process/environment;1"]
                 .getService(Ci.nsIEnvironment);
     let lang = env.get("LANG").split(".");
