@@ -80,7 +80,7 @@ function monkeyPatchWindow(w, loadedAlready, options) {
     let tabmail = w.document.getElementById("tabmail");
 
     // Check the windows is a mail:3pane
-    if ( (!taskPopup && !appMenuPopup) || !tabmail)
+    if ((!taskPopup && !appMenuPopup) || !tabmail)
       return;
 
     let openTabUrl = function() {
