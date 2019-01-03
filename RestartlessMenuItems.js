@@ -71,14 +71,14 @@ function isThunderbird() {
  */
 function monkeyPatchWindow(w, loadedAlready, options) {
   let doIt = function() {
-	let id = options.id;
-	let idAppMenu = options.idAppMenu;
+  let id = options.id;
+  let idAppMenu = options.idAppMenu;
 
-	let taskPopup = w.document.getElementById("taskPopup");
-	let appMenuPopup = w.document.getElementById("appmenu_taskPopup");
+  let taskPopup = w.document.getElementById("taskPopup");
+  let appMenuPopup = w.document.getElementById("appmenu_taskPopup");
 
     let tabmail = w.document.getElementById("tabmail");
-	
+
     // Check the windows is a mail:3pane
     if ( (!taskPopup && !appMenuPopup) || !tabmail)
       return;
@@ -95,10 +95,10 @@ function monkeyPatchWindow(w, loadedAlready, options) {
       openTabUrl() || options.onCommand && options.onCommand();
     };
 
-	if (id && taskPopup)
-		addMenuItem(w,onCmd,options,id,taskPopup);
-	if (idAppMenu && appMenuPopup)
-		addMenuItem(w,onCmd,options,idAppMenu,appMenuPopup);
+  if (id && taskPopup)
+    addMenuItem(w, onCmd, options, id, taskPopup);
+  if (idAppMenu && appMenuPopup)
+    addMenuItem(w, onCmd, options, idAppMenu, appMenuPopup);
   };
   if (loadedAlready)
     doIt();
@@ -106,9 +106,8 @@ function monkeyPatchWindow(w, loadedAlready, options) {
     w.addEventListener("load", doIt);
 }
 
-function addMenuItem(w,onCmd,options,id,taskPopup)
-{
-	let oldMenuitem = w.document.getElementById(id);
+function addMenuItem(w, onCmd, options, id, taskPopup) {
+  let oldMenuitem = w.document.getElementById(id);
     let menuitem = w.document.createElement("menuitem");
     menuitem.addEventListener("command", onCmd);
     menuitem.setAttribute("label", options.label);
@@ -121,13 +120,10 @@ function addMenuItem(w,onCmd,options,id,taskPopup)
       menuitem.setAttribute("class", "menuitem-iconic");
       menuitem.style.listStyleImage = "url('" + options.image + "')";
     }
-    if (!oldMenuitem)
-    {
+    if (!oldMenuitem) {
       if (taskPopup)
         taskPopup.appendChild(menuitem);
-    }
-    else
-    {
+    } else {
       if (taskPopup)
         taskPopup.replaceChild(menuitem, oldMenuitem);
     }
