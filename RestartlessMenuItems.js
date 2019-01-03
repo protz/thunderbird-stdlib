@@ -120,12 +120,11 @@ function addMenuItem(w, onCmd, options, id, taskPopup) {
       menuitem.setAttribute("class", "menuitem-iconic");
       menuitem.style.listStyleImage = "url('" + options.image + "')";
     }
-    if (!oldMenuitem) {
-      if (taskPopup)
-        taskPopup.appendChild(menuitem);
-    } else {
-      if (taskPopup)
+    if (taskPopup) {
+      if (oldMenuitem)
         taskPopup.replaceChild(menuitem, oldMenuitem);
+      else
+        taskPopup.appendChild(menuitem);
     }
 }
 
