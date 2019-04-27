@@ -73,7 +73,6 @@ if (!Services.intl) {
                                      "nsIScriptableDateFormat");
 }
 
-Cu.importGlobalProperties(["URL"]);
 const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__), null);
 
 let Log = setupLogging(logRoot + ".Stdlib");

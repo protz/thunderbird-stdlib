@@ -46,8 +46,6 @@ var EXPORTED_SYMBOLS = ["SimpleStorage"];
 const {Sqlite} = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
 const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
-Cu.importGlobalProperties(["URL"]);
-
 let Log;
 try {
   const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__));
@@ -101,7 +99,6 @@ var SimpleStorage = {
     }
 
     await this._dbConnection.executeBeforeShutdown("SimpleStorage:set", async db => {
-
       let query = await this.hasKey(tableName, key) ?
         "UPDATE #1 SET value = :value WHERE key = :key" :
         "INSERT INTO #1 (key, value) VALUES (:key, :value)";
@@ -118,7 +115,6 @@ var SimpleStorage = {
     }
 
     await this._dbConnection.executeBeforeShutdown("SimpleStorage:remove", async db => {
-
       if (!(await this.hasKey(tableName, key))) {
         return false;
       }

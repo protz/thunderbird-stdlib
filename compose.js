@@ -53,8 +53,6 @@ const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
-Cu.importGlobalProperties(["URL"]);
-
 function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__), null);
 }
@@ -181,7 +179,6 @@ function citeString(aStr) {
       return "\n>";
     }
       return match;
-
   }, "g");
 }
 
@@ -240,13 +237,10 @@ function simpleWrap(txt, width) {
           // Make sure no one interprets this as a line continuation.
           soFar.push(remaining.trimRight());
           return soFar.join("\n");
-
-
     }
       // Same remark about the trailing space.
       soFar.push(maybeEscape(remaining.trimRight()));
       return soFar.join("\n");
-
   }
 
   let lines = txt.split(/\r?\n/);
@@ -429,7 +423,6 @@ function determineComposeHtml(aIdentity) {
     return (aIdentity.composeHtml == Ci.nsIMsgCompFormat.HTML);
   }
     return Services.prefs.getBoolPref("mail.compose_html");
-
 }
 
 /**

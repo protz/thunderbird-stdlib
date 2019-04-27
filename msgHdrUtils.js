@@ -72,7 +72,6 @@ const {toXPCOMArray} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
-Cu.importGlobalProperties(["URL"]);
 const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__));
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service

@@ -38,8 +38,8 @@
 //  head.js and we're setting XPCSHELL_TEST_PROFILE_DIR from run.js
 do_get_profile();
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource:///modules/SimpleStorage.js");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {SimpleStorage} = ChromeUtils.import("resource:///modules/SimpleStorage.js");
 
 let remainingThreads = 0;
 
