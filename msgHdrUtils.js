@@ -66,14 +66,14 @@ const nsMsgFolderFlags_Inbox    = 0x00001000;
 
 const PR_WRONLY = 0x02;
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
-const {MimeMessage, MsgHdrToMimeMessage} = ChromeUtils.import("resource:///modules/gloda/mimemsg.js", null);
-const {toXPCOMArray} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
-const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {MimeMessage, MsgHdrToMimeMessage} = ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
+const {toXPCOMArray} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
 Cu.importGlobalProperties(["URL"]);
-const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__), null);
+const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__));
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
 XPCOMUtils.defineLazyGetter(MailServices, "messenger", function() {

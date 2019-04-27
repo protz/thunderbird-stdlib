@@ -42,8 +42,8 @@
 
 var EXPORTED_SYMBOLS = ["sendMessage"];
 
-const {MailUtils} = ChromeUtils.import("resource:///modules/MailUtils.js", null);
-const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
+const {MailUtils} = ChromeUtils.import("resource:///modules/MailUtils.jsm");
+const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
 const mCompType = Ci.nsIMsgCompType;
 const isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
@@ -51,7 +51,7 @@ const isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 Cu.importGlobalProperties(["URL"]);
 
 function importRelative(that, path) {
-  return ChromeUtils.import(new URL(path, that.__URI__), null);
+  return ChromeUtils.import(new URL(path, that.__URI__));
 }
 
 const {generateQI, range} = importRelative(this, "misc.js");

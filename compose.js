@@ -49,9 +49,9 @@ var EXPORTED_SYMBOLS = [
   "getSignatureContentsForAccount",
 ];
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", null);
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
-const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
+const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
 Cu.importGlobalProperties(["URL"]);
 
