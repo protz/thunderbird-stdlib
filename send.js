@@ -48,8 +48,6 @@ const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm"
 const mCompType = Ci.nsIMsgCompType;
 const isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 
-Cu.importGlobalProperties(["URL"]);
-
 function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__));
 }
@@ -144,7 +142,6 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
     return aMsgComposeService.InitCompose(aWindow, aParams);
   }
     return aMsgComposeService.initCompose(aParams, aWindow, aDocShell);
-
 }
 
 /**
@@ -205,7 +202,6 @@ function sendMessage(aParams,
     aBody,
     { progressListener, sendListener, stateListener },
     options) {
-
   let popOut = options && options.popOut;
   let archive = options && options.archive;
 
@@ -479,5 +475,4 @@ function sendMessage(aParams,
       Log.error(e);
       dumpCallStack(e);
     }
-
 }
