@@ -60,11 +60,11 @@ var EXPORTED_SYMBOLS = [
   "generateQI",
 ];
 
-const {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", null);
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", null);
-const {MailServices} = ChromeUtils.import("resource:///modules/mailServices.js", null);
+const {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
 if (!Services.intl) {
   // That one doesn't belong to MailServices.

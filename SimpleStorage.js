@@ -43,14 +43,14 @@
 
 var EXPORTED_SYMBOLS = ["SimpleStorage"];
 
-const {Sqlite} = ChromeUtils.import("resource://gre/modules/Sqlite.jsm", null);
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", null);
+const {Sqlite} = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 Cu.importGlobalProperties(["URL"]);
 
 let Log;
 try {
-  const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__), null);
+  const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__));
   Log = setupLogging(logRoot + ".SimpleStorage");
   Log.debug("Simple Storage loaded.");
 } catch (err) {
