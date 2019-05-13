@@ -116,7 +116,7 @@ FakeEditor.prototype = {
     return this.iframe.contentDocument.body;
   },
 
-  QueryInterface: generateQI([Ci.nsISupports, Ci.nsIEditor, Ci.nsIEditorMailSupport]),
+  QueryInterface: generateQI([Ci.nsIEditor, Ci.nsIEditorMailSupport]),
 };
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to

@@ -90,18 +90,17 @@ function quoteMsgHdr(aMsgHdr, k) {
     },
 
     /** @ignore*/
-    onStartRequest(/* nsIRequest */ aRequest, /* nsISupports */ aContext) {
+    onStartRequest(aRequest,) {
     },
 
     /** @ignore*/
-    onStopRequest(/* nsIRequest */ aRequest, /* nsISupports */ aContext, /* int */ aStatusCode) {
+    onStopRequest(aRequest, aStatusCode) {
       let data = chunks.join("");
       k(data);
     },
 
     /** @ignore*/
-    onDataAvailable(/* nsIRequest */ aRequest, /* nsISupports */ aContext,
-        /* nsIInputStream */ aStream, /* int */ aOffset, /* int */ aCount) {
+    onDataAvailable(aRequest, aStream, aOffset, aCount) {
       // Fortunately, we have in Gecko 2.0 a nice wrapper
       let data = NetUtil.readInputStreamToString(aStream, aCount);
       // Now each character of the string is actually to be understood as a byte
@@ -114,7 +113,7 @@ function quoteMsgHdr(aMsgHdr, k) {
       chunks.push(unicodeConverter.convertFromByteArray(array, array.length));
     },
 
-    QueryInterface: generateQI([Ci.nsISupports, Ci.nsIStreamListener,
+    QueryInterface: generateQI([Ci.nsIStreamListener,
       Ci.nsIMsgQuotingOutputStreamListener, Ci.nsIRequestObserver]),
   };
   // Here's what we want to stream...
