@@ -354,9 +354,9 @@ function createStreamListener(k) {
       generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
 
     // nsIRequestObserver
-    onStartRequest(aRequest, aContext) {
+    onStartRequest(aRequest) {
     },
-    onStopRequest(aRequest, aContext, aStatusCode) {
+    onStopRequest(aRequest, aStatusCode) {
       try {
         k(this._data);
       } catch (e) {
@@ -365,7 +365,7 @@ function createStreamListener(k) {
     },
 
     // nsIStreamListener
-    onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
+    onDataAvailable(aRequest, aInputStream, aOffset, aCount) {
       if (this._stream == null) {
         this._stream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
         this._stream.init(aInputStream);
