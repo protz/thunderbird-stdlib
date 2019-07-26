@@ -67,10 +67,15 @@ const nsMsgFolderFlags_Inbox    = 0x00001000;
 const PR_WRONLY = 0x02;
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  MailServices: "resource:///modules/MailServices.jsm",
+  MailUtils: "resource:///modules/MailUtils.jsm",
+  MessageArchiver: "resource:///modules/MessageArchiver.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  toXPCOMArray: "resource:///modules/iteratorUtils.jsm",
+});
 const {MimeMessage, MsgHdrToMimeMessage} = ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
-const {toXPCOMArray} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
 
 const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__));
 
@@ -290,16 +295,9 @@ function getMail3Pane() {
  * @param {nsIMsgDbHdr array} msgHdrs The message headers
  */
 function msgHdrsArchive(msgHdrs) {
-  /* See
-   * http://mxr.mozilla.org/comm-central/source/suite/mailnews/mailWindowOverlay.js#1337
-   *
-   * The window is here because otherwise we don't have access to
-   * BatchMessageMover.
-   * */
-  let mail3PaneWindow = getMail3Pane();
-  let batchMover = new mail3PaneWindow.BatchMessageMover();
-  batchMover.archiveMessages(msgHdrs.filter(
-    x => !msgHdrIsArchive(x) && getMail3Pane().getIdentityForHeader(x).archiveEnabled
+  const archiver = new MessageArchiver();
+  archiver.archiveMessages(msgHdrs.filter(
+    x => !msgHdrIsArchive(x) && MailUtils.getIdentityForHeader(x).archiveEnabled
   ));
 }
 
