@@ -62,7 +62,7 @@ function importRelative(that, path) {
 }
 
 const {
-  combine, escapeHtml, generateQI, getDefaultIdentity, getIdentities, systemCharset,
+  combine, escapeHtml, getDefaultIdentity, getIdentities, systemCharset,
 } = importRelative(this, "misc.js");
 const {msgHdrGetUri, getMail3Pane, msgHdrGetHeaders} = importRelative(this, "msgHdrUtils.js");
 const {logRoot, setupLogging} = importRelative(this, "../log.js");
@@ -117,7 +117,7 @@ function quoteMsgHdr(aMsgHdr, k) {
       chunks.push(unicodeConverter.convertFromByteArray(array, array.length));
     },
 
-    QueryInterface: generateQI([Ci.nsIStreamListener,
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIStreamListener,
       Ci.nsIMsgQuotingOutputStreamListener, Ci.nsIRequestObserver]),
   };
   // Here's what we want to stream...

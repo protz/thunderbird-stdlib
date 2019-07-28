@@ -77,7 +77,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 const {MimeMessage, MsgHdrToMimeMessage} = ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
 
-const {entries, generateQI} = ChromeUtils.import(new URL("misc.js", this.__URI__));
+const {entries} = ChromeUtils.import(new URL("misc.js", this.__URI__));
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
 XPCOMUtils.defineLazyGetter(MailServices, "messenger", function() {
@@ -349,7 +349,7 @@ function createStreamListener(k) {
     _stream: null,
 
     QueryInterface:
-      generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
+      ChromeUtils.generateQI([Ci.nsIStreamListener, Ci.nsIRequestObserver]),
 
     // nsIRequestObserver
     onStartRequest(aRequest) {
@@ -446,7 +446,7 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
       msgHdr.flags,
       msgHdr.getStringProperty("keywords"),
       {
-        QueryInterface: generateQI([Ci.nsIMsgCopyServiceListener]),
+        QueryInterface: ChromeUtils.generateQI([Ci.nsIMsgCopyServiceListener]),
 
         OnStartCopy() {
         },

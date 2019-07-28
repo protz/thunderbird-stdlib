@@ -56,8 +56,6 @@ var EXPORTED_SYMBOLS = [
   "systemCharset",
   // Platform-specific idioms
   "isOSX", "isWindows", "isAccel",
-  // Compatible with TB60
-  "generateQI",
 ];
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -395,13 +393,4 @@ function combine(a1, a2) {
   if (a1.length != a2.length)
     throw new Error("combine: the given arrays have different lengths");
   return [ ...range(0, a1.length) ].map(i => [a1[i], a2[i]]);
-}
-
-function generateQI(interfaces) {
-  try {
-    ChromeUtils.generateQI(interfaces);
-  } catch (e) {
-    // compatible with TB60
-    XPCOMUtils.generateQI(interfaces);
-  }
 }
