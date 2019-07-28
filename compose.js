@@ -49,16 +49,20 @@ var EXPORTED_SYMBOLS = [
   "getSignatureContentsForAccount",
 ];
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  MailServices: "resource:///modules/MailServices.jsm",
+  NetUtil: "resource://gre/modules/NetUtil.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__), null);
 }
 
 const {
-  combine, escapeHtml, generateQI, getDefaultIdentity, getIdentities, systemCharset,
+  combine, escapeHtml, getDefaultIdentity, getIdentities, systemCharset,
 } = importRelative(this, "misc.js");
 const {msgHdrGetUri, getMail3Pane, msgHdrGetHeaders} = importRelative(this, "msgHdrUtils.js");
 const {logRoot, setupLogging} = importRelative(this, "../log.js");
@@ -113,7 +117,7 @@ function quoteMsgHdr(aMsgHdr, k) {
       chunks.push(unicodeConverter.convertFromByteArray(array, array.length));
     },
 
-    QueryInterface: generateQI([Ci.nsIStreamListener,
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIStreamListener,
       Ci.nsIMsgQuotingOutputStreamListener, Ci.nsIRequestObserver]),
   };
   // Here's what we want to stream...

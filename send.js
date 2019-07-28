@@ -52,7 +52,7 @@ function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__));
 }
 
-const {generateQI, range} = importRelative(this, "misc.js");
+const {range} = importRelative(this, "misc.js");
 const {msgUriToMsgHdr} = importRelative(this, "msgHdrUtils.js");
 const {
   determineComposeHtml, getEditorForIframe, plainTextToHtml, htmlToPlainText,
@@ -116,7 +116,7 @@ FakeEditor.prototype = {
     return this.iframe.contentDocument.body;
   },
 
-  QueryInterface: generateQI([Ci.nsIEditor, Ci.nsIEditorMailSupport]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIEditor, Ci.nsIEditorMailSupport]),
 };
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to
