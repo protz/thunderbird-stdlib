@@ -49,9 +49,13 @@ var EXPORTED_SYMBOLS = [
   "getSignatureContentsForAccount",
 ];
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  MailServices: "resource:///modules/MailServices.jsm",
+  NetUtil: "resource://gre/modules/NetUtil.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__), null);
