@@ -10,7 +10,7 @@
     "url": "https://github.com/protz/thunderbird-stdlib/issues"
   },
   "engines": {
-    "thunderbird": ">=60.0a1"
+    "thunderbird": ">=68.0a1"
   },
   "dependencies": {},
   "devDependencies": {
