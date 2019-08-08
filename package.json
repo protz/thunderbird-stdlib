@@ -23,5 +23,5 @@
     "test": "npm-run-all test:*",
     "test:lint": "eslint ."
   },
-  "license": "MPL-1.1"
+  "license": "MPL-2.0"
 }
