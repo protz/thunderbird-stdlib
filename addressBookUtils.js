@@ -9,12 +9,13 @@
  */
 
 var EXPORTED_SYMBOLS = [
-  "kPersonalAddressBookUri", "kCollectedAddressBookUri",
-  "getAddressBookFromUri", "saveEmailInAddressBook",
+  "kPersonalAddressBookUri",
+  "kCollectedAddressBookUri",
+  "getAddressBookFromUri",
+  "saveEmailInAddressBook"
 ];
 
-const abManager = Cc["@mozilla.org/abmanager;1"]
-                  .getService(Ci.nsIAbManager);
+const abManager = Cc["@mozilla.org/abmanager;1"].getService(Ci.nsIAbManager);
 
 /**
  * The "Personal addresses" address book
@@ -45,8 +46,9 @@ function getAddressBookFromUri(aUri) {
  * @return nsIAbCard
  */
 function saveEmailInAddressBook(aBook, aEmail, aName) {
-  let card = Cc["@mozilla.org/addressbook/cardproperty;1"]
-             .createInstance(Ci.nsIAbCard);
+  let card = Cc["@mozilla.org/addressbook/cardproperty;1"].createInstance(
+    Ci.nsIAbCard
+  );
   // card.setProperty("FirstName", "John");
   // card.setProperty("LastName", "Smith");
   card.displayName = aName;

@@ -10,23 +10,31 @@
 
 var EXPORTED_SYMBOLS = ["sendMessage"];
 
-const {MailUtils} = ChromeUtils.import("resource:///modules/MailUtils.jsm");
-const {MailServices} = ChromeUtils.import("resource:///modules/MailServices.jsm");
+const { MailUtils } = ChromeUtils.import("resource:///modules/MailUtils.jsm");
+const { MailServices } = ChromeUtils.import(
+  "resource:///modules/MailServices.jsm"
+);
 
 const mCompType = Ci.nsIMsgCompType;
-const isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
+const isWindows = "@mozilla.org/windows-registry-key;1" in Cc;
 
 function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__));
 }
 
-const {range} = importRelative(this, "misc.js");
-const {msgUriToMsgHdr} = importRelative(this, "msgHdrUtils.js");
+const { range } = importRelative(this, "misc.js");
+const { msgUriToMsgHdr } = importRelative(this, "msgHdrUtils.js");
 const {
-  determineComposeHtml, getEditorForIframe, plainTextToHtml, htmlToPlainText,
-  simpleWrap,
+  determineComposeHtml,
+  getEditorForIframe,
+  plainTextToHtml,
+  htmlToPlainText,
+  simpleWrap
 } = importRelative(this, "compose.js");
-const {dumpCallStack, logRoot, setupLogging} = importRelative(this, "../log.js");
+const { dumpCallStack, logRoot, setupLogging } = importRelative(
+  this,
+  "../log.js"
+);
 
 let Log = setupLogging(logRoot + ".Send");
 
@@ -39,21 +47,27 @@ let Log = setupLogging(logRoot + ".Send");
  */
 function getArchiveFolderUriFor(identity, msgDate) {
   let msgYear = msgDate.getFullYear().toString();
-  let monthFolderName = msgYear + "-" + (msgDate.getMonth() + 1).toString().padStart(2, "0");
+  let monthFolderName =
+    msgYear + "-" + (msgDate.getMonth() + 1).toString().padStart(2, "0");
   let granularity = identity.archiveGranularity;
   let folderUri = identity.archiveFolder;
   let archiveFolder = MailUtils.getFolderForURI(folderUri, false);
   let forceSingle = !archiveFolder.canCreateSubfolders;
-  if (!forceSingle && (archiveFolder.server instanceof Ci.nsIImapIncomingServer)) {
+  if (
+    !forceSingle &&
+    archiveFolder.server instanceof Ci.nsIImapIncomingServer
+  ) {
     forceSingle = archiveFolder.server.isGMailServer;
   }
   if (forceSingle) {
     return folderUri;
   }
-  if (granularity >= Ci.nsIMsgIdentity.perYearArchiveFolders)
+  if (granularity >= Ci.nsIMsgIdentity.perYearArchiveFolders) {
     folderUri += "/" + msgYear;
-  if (granularity >= Ci.nsIMsgIdentity.perMonthArchiveFolders)
+  }
+  if (granularity >= Ci.nsIMsgIdentity.perMonthArchiveFolders) {
     folderUri += "/" + monthFolderName;
+  }
   return folderUri;
 }
 
@@ -84,7 +98,10 @@ FakeEditor.prototype = {
     return this.iframe.contentDocument.body;
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIEditor, Ci.nsIEditorMailSupport]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIEditor,
+    Ci.nsIEditorMailSupport
+  ])
 };
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to
@@ -109,7 +126,7 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
   if ("InitCompose" in aMsgComposeService) {
     return aMsgComposeService.InitCompose(aWindow, aParams);
   }
-    return aMsgComposeService.initCompose(aParams, aWindow, aDocShell);
+  return aMsgComposeService.initCompose(aParams, aWindow, aDocShell);
 }
 
 /**
@@ -165,11 +182,13 @@ function initCompose(aMsgComposeService, aParams, aWindow, aDocShell) {
  *  Archives folder already exists.
  */
 // eslint-disable-next-line complexity
-function sendMessage(aParams,
-    { deliverType, compType },
-    aBody,
-    { progressListener, sendListener, stateListener },
-    options) {
+function sendMessage(
+  aParams,
+  { deliverType, compType },
+  aBody,
+  { progressListener, sendListener, stateListener },
+  options
+) {
   let popOut = options && options.popOut;
   let archive = options && options.archive;
 
@@ -179,26 +198,32 @@ function sendMessage(aParams,
   // Here is the part where we do all the stuff related to filling proper
   //  headers, adding references, making sure all the composition fields are
   //  properly set before assembling the message.
-  let fields = Cc["@mozilla.org/messengercompose/composefields;1"]
-                  .createInstance(Ci.nsIMsgCompFields);
-  fields.from = MailServices.headerParser.makeMimeAddress(identity.fullName, identity.email);
+  let fields = Cc[
+    "@mozilla.org/messengercompose/composefields;1"
+  ].createInstance(Ci.nsIMsgCompFields);
+  fields.from = MailServices.headerParser.makeMimeAddress(
+    identity.fullName,
+    identity.email
+  );
   fields.to = to;
-  if ("cc" in aParams)
+  if ("cc" in aParams) {
     fields.cc = aParams.cc;
-  if ("bcc" in aParams)
+  }
+  if ("bcc" in aParams) {
     fields.bcc = aParams.bcc;
+  }
   fields.subject = subject;
-  fields.returnReceipt = ("returnReceipt" in aParams)
-    ? aParams.returnReceipt
-    : identity.requestReturnReceipt;
-  fields.receiptHeaderType = ("receiptType" in aParams)
-    ? aParams.receiptType
-    : identity.receiptHeaderType;
-  fields.DSN = ("requestDsn" in aParams)
-    ? aParams.requestDsn
-    : identity.requestDSN;
-  if ("securityInfo" in aParams)
+  fields.returnReceipt =
+    "returnReceipt" in aParams
+      ? aParams.returnReceipt
+      : identity.requestReturnReceipt;
+  fields.receiptHeaderType =
+    "receiptType" in aParams ? aParams.receiptType : identity.receiptHeaderType;
+  fields.DSN =
+    "requestDsn" in aParams ? aParams.requestDsn : identity.requestDSN;
+  if ("securityInfo" in aParams) {
     fields.securityInfo = aParams.securityInfo;
+  }
 
   let references = [];
   switch (compType) {
@@ -208,9 +233,14 @@ function sendMessage(aParams,
     case mCompType.Draft: {
       // Copy the references from the original draft into the message we're
       // about to send...
-      Log.assert(urls.length == 1, "Can't edit more than one message at a time");
+      Log.assert(
+        urls.length == 1,
+        "Can't edit more than one message at a time"
+      );
       let msgHdr = msgUriToMsgHdr(urls[0]);
-      references =  [ ...range(0, msgHdr.numReferences) ].map(i => msgHdr.getStringReference(i));
+      references = [...range(0, msgHdr.numReferences)].map(i =>
+        msgHdr.getStringReference(i)
+      );
       break;
     }
 
@@ -221,9 +251,14 @@ function sendMessage(aParams,
     case mCompType.ReplyToSenderAndGroup:
     case mCompType.ReplyWithTemplate:
     case mCompType.ReplyToList: {
-      Log.assert(urls.length == 1, "Can't reply to more than one message at a time");
+      Log.assert(
+        urls.length == 1,
+        "Can't reply to more than one message at a time"
+      );
       let msgHdr = msgUriToMsgHdr(urls[0]);
-      references =  [ ...range(0, msgHdr.numReferences) ].map(i => msgHdr.getStringReference(i));
+      references = [...range(0, msgHdr.numReferences)].map(i =>
+        msgHdr.getStringReference(i)
+      );
       references.push(msgHdr.messageId);
       break;
     }
@@ -237,7 +272,10 @@ function sendMessage(aParams,
     }
 
     case mCompType.ForwardInline: {
-      Log.assert(urls.length == 1, "Can't forward inline more than one message at a time");
+      Log.assert(
+        urls.length == 1,
+        "Can't forward inline more than one message at a time"
+      );
       let msgHdr = msgUriToMsgHdr(urls[0]);
       references.push(msgHdr.messageId);
       break;
@@ -259,10 +297,7 @@ function sendMessage(aParams,
     compType == Ci.nsIMsgCompType.ReplyToSender ||
     compType == Ci.nsIMsgCompType.ReplyToSenderAndGroup ||
     compType == Ci.nsIMsgCompType.ReplyWithTemplate;
-  let defaultFcc =
-    fccFolder.indexOf("nocopy://") == 0
-    ? ""
-    : fccFolder;
+  let defaultFcc = fccFolder.indexOf("nocopy://") == 0 ? "" : fccFolder;
   // Replicating the whole logic from nsMsgSend.cpp:2840... with our own archive
   // feat.
   if (archive) {
@@ -277,7 +312,9 @@ function sendMessage(aParams,
       Log.debug("Message will be copied in", folderUri, "once sent");
       fields.fcc = folderUri;
     } else {
-      Log.warn("The archive folder doesn't exist yet, so the last message you sent won't be archived... sorry!");
+      Log.warn(
+        "The archive folder doesn't exist yet, so the last message you sent won't be archived... sorry!"
+      );
       fields.fcc = defaultFcc;
     }
   } else if (!doFcc) {
@@ -313,8 +350,9 @@ function sendMessage(aParams,
   //  whether we want HTML composition or not. This is nsMsgCompose::Initialize.
   //  Well, guess what? We're not calling that function, and we make sure
   //  m_composeHTML stays PR_FALSE until the end!
-  let params = Cc["@mozilla.org/messengercompose/composeparams;1"]
-                  .createInstance(Ci.nsIMsgComposeParams);
+  let params = Cc[
+    "@mozilla.org/messengercompose/composeparams;1"
+  ].createInstance(Ci.nsIMsgComposeParams);
   params.composeFields = fields;
   params.identity = identity;
   params.type = compType;
@@ -340,18 +378,20 @@ function sendMessage(aParams,
     //  middle, but well... I guess this is okay enough.
     aBody.match({
       plainText(body) {
-        if (composeHtml)
+        if (composeHtml) {
           fields.body = plainTextToHtml(body);
-        else
+        } else {
           fields.body = body;
+        }
       },
       editor(iframe) {
         let html = iframe.contentDocument.body.innerHTML;
-        if (composeHtml)
+        if (composeHtml) {
           fields.body = html;
-        else
+        } else {
           fields.body = htmlToPlainText(html);
-      },
+        }
+      }
     });
 
     params.format = composeHtml
@@ -361,86 +401,89 @@ function sendMessage(aParams,
     params.type = mCompType.New;
     return MailServices.compose.OpenComposeWindowWithParams(null, params);
   }
-    aBody.match({
-      plainText(body) {
-        // We're in 2011 now, let's assume everyone knows how to read UTF-8
-        fields.bodyIsAsciiOnly = false;
-        fields.characterSet = "UTF-8";
-        fields.useMultipartAlternative = false;
-        // So we should have something more elaborate than a simple textarea. The
-        //  reason is, we should be able to differentiate between user-inserted >'s
-        //  and quote-inserted >'s. (The standard Thunderbird plaintext editor does
-        //  it with a blue color). The user-inserted >'s want a space prepended so
-        //  that the MUA doesn't interpret them as quotation. Real quotations don't.
-        // This is kinda out of scope so we're leaving the issue non-fixed but this
-        //  is clearly a FIXME.
-        params.format = Ci.nsIMsgCompFormat.PlainText;
-        fields.forcePlainText = true;
-        // Strip trailing whitespace before wrapping, so as not to interpret it
-        // as a f=f line continuation.
-        fields.body = simpleWrap(body.replace(/ +$/gm, ""), 72) + "\n";
-        let msgLineBreak = isWindows ? "\r\n" : "\n";
-        fields.body = fields.body.replace(/\r?\n/g, msgLineBreak);
+  aBody.match({
+    plainText(body) {
+      // We're in 2011 now, let's assume everyone knows how to read UTF-8
+      fields.bodyIsAsciiOnly = false;
+      fields.characterSet = "UTF-8";
+      fields.useMultipartAlternative = false;
+      // So we should have something more elaborate than a simple textarea. The
+      //  reason is, we should be able to differentiate between user-inserted >'s
+      //  and quote-inserted >'s. (The standard Thunderbird plaintext editor does
+      //  it with a blue color). The user-inserted >'s want a space prepended so
+      //  that the MUA doesn't interpret them as quotation. Real quotations don't.
+      // This is kinda out of scope so we're leaving the issue non-fixed but this
+      //  is clearly a FIXME.
+      params.format = Ci.nsIMsgCompFormat.PlainText;
+      fields.forcePlainText = true;
+      // Strip trailing whitespace before wrapping, so as not to interpret it
+      // as a f=f line continuation.
+      fields.body = simpleWrap(body.replace(/ +$/gm, ""), 72) + "\n";
+      let msgLineBreak = isWindows ? "\r\n" : "\n";
+      fields.body = fields.body.replace(/\r?\n/g, msgLineBreak);
 
-        // This part initializes a nsIMsgCompose instance. This is useless, because
-        //  that component is supposed to talk to the "real" compose window, set the
-        //  encoding, set the composition mode... we're only doing that because we
-        //  can't send the message ourselves because of too many [noscript]s.
-        gMsgCompose = initCompose(MailServices.compose, params);
-      },
+      // This part initializes a nsIMsgCompose instance. This is useless, because
+      //  that component is supposed to talk to the "real" compose window, set the
+      //  encoding, set the composition mode... we're only doing that because we
+      //  can't send the message ourselves because of too many [noscript]s.
+      gMsgCompose = initCompose(MailServices.compose, params);
+    },
 
-      editor(iframe) {
-        fields.bodyIsAsciiOnly = false;
-        fields.characterSet = "UTF-8";
-        gMsgCompose = initCompose(
-          MailServices.compose,
-          params,
-          null, // XXX put a real window here to see the notification window
-          iframe.contentWindow.docshell
-        );
-        // Here we trust the parameters that have been set by the call to
-        // msgComposeService.InitCompose above, and we just assume the
-        // fakeEditor will be able to output HTML and plainText as needed...
-        try {
-          let fakeEditor = new FakeEditor(iframe);
-          gMsgCompose.initEditor(fakeEditor, iframe.contentWindow);
-        } catch (e) {
-          // Recent Thunderbirds only.
-          Log.debug(e);
-          gMsgCompose.editor = getEditorForIframe(iframe);
-        }
-        let convertibility = gMsgCompose.bodyConvertible();
-        Log.debug("This message might be convertible:", convertibility);
-        switch (convertibility) {
-          case Ci.nsIMsgCompConvertible.Plain: // 1
-          case Ci.nsIMsgCompConvertible.Yes: // 2
-          case Ci.nsIMsgCompConvertible.Altering: // 3
-            fields.ConvertBodyToPlainText();
-            fields.forcePlainText = true;
-            fields.useMultipartAlternative = false;
-            break;
+    editor(iframe) {
+      fields.bodyIsAsciiOnly = false;
+      fields.characterSet = "UTF-8";
+      gMsgCompose = initCompose(
+        MailServices.compose,
+        params,
+        null, // XXX put a real window here to see the notification window
+        iframe.contentWindow.docshell
+      );
+      // Here we trust the parameters that have been set by the call to
+      // msgComposeService.InitCompose above, and we just assume the
+      // fakeEditor will be able to output HTML and plainText as needed...
+      try {
+        let fakeEditor = new FakeEditor(iframe);
+        gMsgCompose.initEditor(fakeEditor, iframe.contentWindow);
+      } catch (e) {
+        // Recent Thunderbirds only.
+        Log.debug(e);
+        gMsgCompose.editor = getEditorForIframe(iframe);
+      }
+      let convertibility = gMsgCompose.bodyConvertible();
+      Log.debug("This message might be convertible:", convertibility);
+      switch (convertibility) {
+        case Ci.nsIMsgCompConvertible.Plain: // 1
+        case Ci.nsIMsgCompConvertible.Yes: // 2
+        case Ci.nsIMsgCompConvertible.Altering: // 3
+          fields.ConvertBodyToPlainText();
+          fields.forcePlainText = true;
+          fields.useMultipartAlternative = false;
+          break;
 
-          case Ci.nsIMsgCompConvertible.No: // 4
-          default:
-            fields.useMultipartAlternative = true;
-            break;
-        }
-      },
-    });
-
-    // We create a progress listener...
-    var progress = Cc["@mozilla.org/messenger/progress;1"]
-                     .createInstance(Ci.nsIMsgProgress);
-    if (progress && progressListener)
-      progress.registerListener(progressListener);
-    if (stateListener)
-      gMsgCompose.RegisterStateListener(stateListener);
-
-    try {
-      gMsgCompose.SendMsg(deliverType, identity, "", null, progress);
-      return gMsgCompose;
-    } catch (e) {
-      Log.error(e);
-      dumpCallStack(e);
+        case Ci.nsIMsgCompConvertible.No: // 4
+        default:
+          fields.useMultipartAlternative = true;
+          break;
+      }
     }
+  });
+
+  // We create a progress listener...
+  var progress = Cc["@mozilla.org/messenger/progress;1"].createInstance(
+    Ci.nsIMsgProgress
+  );
+  if (progress && progressListener) {
+    progress.registerListener(progressListener);
+  }
+  if (stateListener) {
+    gMsgCompose.RegisterStateListener(stateListener);
+  }
+
+  try {
+    gMsgCompose.SendMsg(deliverType, identity, "", null, progress);
+    return gMsgCompose;
+  } catch (e) {
+    Log.error(e);
+    dumpCallStack(e);
+  }
 }

@@ -11,16 +11,18 @@
 
 var EXPORTED_SYMBOLS = ["SimpleStorage"];
 
-const {Sqlite} = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { Sqlite } = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 let Log;
 try {
-  const {logRoot, setupLogging} = ChromeUtils.import(new URL("../log.js", this.__URI__));
+  const { logRoot, setupLogging } = ChromeUtils.import(
+    new URL("../log.js", this.__URI__)
+  );
   Log = setupLogging(logRoot + ".SimpleStorage");
   Log.debug("Simple Storage loaded.");
 } catch (err) {
-  Log = {error: () => {}, debug: () => {}};
+  Log = { error: () => {}, debug: () => {} };
 }
 
 const FILE_SIMPLE_STORAGE = "simple_storage.sqlite";
@@ -35,7 +37,7 @@ var SimpleStorage = {
   async openConnection() {
     if (!this._dbConnection) {
       this._dbConnection = await Sqlite.openConnection({
-        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_SIMPLE_STORAGE),
+        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_SIMPLE_STORAGE)
       });
     }
   },
@@ -47,11 +49,14 @@ var SimpleStorage = {
 
     let rows = await this._dbConnection.execute(
       "SELECT value FROM #1 WHERE key = :key".replace("#1", tableName),
-      {key}
+      { key }
     );
 
     if (rows.length > 1) {
-      Log.assert(false, "Multiple rows for the same primary key? That's impossible!");
+      Log.assert(
+        false,
+        "Multiple rows for the same primary key? That's impossible!"
+      );
       return null;
     }
 
@@ -66,15 +71,19 @@ var SimpleStorage = {
       await this._ensureTable(tableName);
     }
 
-    await this._dbConnection.executeBeforeShutdown("SimpleStorage:set", async db => {
-      let query = await this.hasKey(tableName, key) ?
-        "UPDATE #1 SET value = :value WHERE key = :key" :
-        "INSERT INTO #1 (key, value) VALUES (:key, :value)";
+    await this._dbConnection.executeBeforeShutdown(
+      "SimpleStorage:set",
+      async db => {
+        let query = (await this.hasKey(tableName, key))
+          ? "UPDATE #1 SET value = :value WHERE key = :key"
+          : "INSERT INTO #1 (key, value) VALUES (:key, :value)";
 
-      await db.execute(query.replace("#1", tableName), {
-        key, value: JSON.stringify({ value }),
-      });
-    });
+        await db.execute(query.replace("#1", tableName), {
+          key,
+          value: JSON.stringify({ value })
+        });
+      }
+    );
   },
 
   async remove(tableName, key) {
@@ -82,17 +91,21 @@ var SimpleStorage = {
       await this._ensureTable(tableName);
     }
 
-    await this._dbConnection.executeBeforeShutdown("SimpleStorage:remove", async db => {
-      if (!(await this.hasKey(tableName, key))) {
-        return false;
+    await this._dbConnection.executeBeforeShutdown(
+      "SimpleStorage:remove",
+      async db => {
+        if (!(await this.hasKey(tableName, key))) {
+          return false;
+        }
+
+        await db.execute(
+          "DELETE FROM #1 WHERE key = :key".replace("#1", tableName),
+          { key }
+        );
+
+        return true;
       }
-
-      await db.execute("DELETE FROM #1 WHERE key = :key".replace("#1", tableName),
-        {key}
-      );
-
-      return true;
-    });
+    );
   },
 
   async hasKey(tableName, key) {
@@ -113,8 +126,11 @@ var SimpleStorage = {
 
     if (!this._dbConnection.tableExists(tableName)) {
       await this._dbConnection.execute(
-        "CREATE TABLE #1 (key TEXT PRIMARY KEY, value TEXT)".replace("#1", tableName)
+        "CREATE TABLE #1 (key TEXT PRIMARY KEY, value TEXT)".replace(
+          "#1",
+          tableName
+        )
       );
     }
-  },
+  }
 };
