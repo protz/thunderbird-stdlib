@@ -6,8 +6,10 @@
 //  head.js and we're setting XPCSHELL_TEST_PROFILE_DIR from run.js
 do_get_profile();
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {SimpleStorage} = ChromeUtils.import("resource:///modules/SimpleStorage.js");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { SimpleStorage } = ChromeUtils.import(
+  "resource:///modules/SimpleStorage.js"
+);
 
 let remainingThreads = 0;
 
@@ -26,10 +28,12 @@ async function test_sync_api() {
   r = await ss.set("myKey", o);
   Assert.ok(!r); // Value was updated in-place
   r = await ss.get("myKey");
-  for (let key of Object.keys(r))
+  for (let key of Object.keys(r)) {
     Assert.equal(r[key], o[key]);
-  for (let key of Object.keys(o))
+  }
+  for (let key of Object.keys(o)) {
     Assert.equal(r[key], o[key]);
+  }
 
   r = await ss.has("myKey");
   Assert.ok(!r);

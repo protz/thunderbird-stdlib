@@ -10,7 +10,7 @@
 
 var EXPORTED_SYMBOLS = ["RestartlessMenuItems"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 let _menuItems = [];
 
@@ -41,42 +41,45 @@ function monkeyPatchWindow(w, loadedAlready, options) {
     let oldMenuitem = w.document.getElementById(id);
 
     // Check the windows is a mail:3pane
-    if (!taskPopup || !tabmail)
+    if (!taskPopup || !tabmail) {
       return;
+    }
 
     let openTabUrl = function() {
-      return (options.url) ?
-        tabmail.openTab("contentTab",
-          { contentPage: options.url }
-        )
+      return options.url
+        ? tabmail.openTab("contentTab", { contentPage: options.url })
         : false;
     };
 
     let onCmd = function() {
-      openTabUrl() || options.onCommand && options.onCommand();
+      openTabUrl() || (options.onCommand && options.onCommand());
     };
 
     let menuitem = w.document.createElement("menuitem");
     menuitem.addEventListener("command", onCmd);
     menuitem.setAttribute("label", options.label);
     menuitem.setAttribute("id", id);
-    if (options.accesskey)
+    if (options.accesskey) {
       menuitem.setAttribute("accesskey", options.accesskey);
-    if (options.key)
+    }
+    if (options.key) {
       menuitem.setAttribute("key", options.key);
+    }
     if (options.image) {
       menuitem.setAttribute("class", "menuitem-iconic");
       menuitem.style.listStyleImage = "url('" + options.image + "')";
     }
-    if (!oldMenuitem)
+    if (!oldMenuitem) {
       taskPopup.appendChild(menuitem);
-    else
+    } else {
       taskPopup.replaceChild(menuitem, oldMenuitem);
+    }
   };
-  if (loadedAlready)
+  if (loadedAlready) {
     doIt();
-  else
+  } else {
     w.addEventListener("load", doIt);
+  }
 }
 
 /**
@@ -102,22 +105,27 @@ function unMonkeyPatchWindow(w, options) {
   // Close all tab with options.url URL
   let removeTabUrl = function() {
     let tabMode = tabmail.tabModes.contentTab;
-    let shouldSwitchToFunc = tabMode.shouldSwitchTo ||
-                            tabMode.tabType.shouldSwitchTo;
+    let shouldSwitchToFunc =
+      tabMode.shouldSwitchTo || tabMode.tabType.shouldSwitchTo;
 
     if (shouldSwitchToFunc) {
-      let tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [{ contentPage: options.url }]);
+      let tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [
+        { contentPage: options.url }
+      ]);
       while (tabIndex >= 0) {
         tabmail.closeTab(tabIndex, true);
-        tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [{ contentPage: options.url }]);
+        tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [
+          { contentPage: options.url }
+        ]);
       }
     }
   };
 
-  if (options.url)
+  if (options.url) {
     removeTabUrl();
-  else
+  } else {
     options.onUnload && options.onUnload();
+  }
 }
 
 /**
@@ -135,8 +143,9 @@ monkeyPatchWindowObserver.prototype = {
   observe(aSubject, aTopic, aData) {
     if (aTopic == "domwindowopened") {
       aSubject.QueryInterface(Ci.nsIDOMWindow);
-      for (let aMenuItem of _menuItems)
+      for (let aMenuItem of _menuItems) {
         monkeyPatchWindow(aSubject.window, false, aMenuItem);
+      }
     }
   },
   register() {
@@ -144,7 +153,7 @@ monkeyPatchWindowObserver.prototype = {
   },
   unregister() {
     Services.ww.unregisterNotification(this);
-  },
+  }
 };
 
 /**
@@ -167,13 +176,19 @@ var RestartlessMenuItems = {
     // more discoverable.
     if (isThunderbird()) {
       // Thunderbird-specific JSM
-      let {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", null);
+      let { fixIterator } = ChromeUtils.import(
+        "resource:///modules/iteratorUtils.jsm",
+        null
+      );
 
       // Push it to our list
       _menuItems.push(options);
 
       // Patch all existing windows
-      for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane"), Ci.nsIDOMWindow)) {
+      for (let w of fixIterator(
+        Services.wm.getEnumerator("mail:3pane"),
+        Ci.nsIDOMWindow
+      )) {
         // True means the window's been loaded already, so add the menu item right
         // away (the default is: wait for the "load" event).
         monkeyPatchWindow(w.window, true, options);
@@ -181,8 +196,9 @@ var RestartlessMenuItems = {
 
       // Patch all future windows
       // with our list of menuItems
-      if (_menuItems.length == 1)
+      if (_menuItems.length == 1) {
         monkeyPatchFutureWindow.register();
+      }
     }
   },
 
@@ -191,15 +207,19 @@ var RestartlessMenuItems = {
       // Find the menuitem in our list by id
       let found = false;
       let index = -1;
-      found = _menuItems.some( function isOurMenuItem(element, arrayIndex) {
-        if (element.id == options.id)
+      found = _menuItems.some(function isOurMenuItem(element, arrayIndex) {
+        if (element.id == options.id) {
           index = arrayIndex;
-        return (element.id == options.id);
+        }
+        return element.id == options.id;
       });
 
       // Un-patch all existing windows
       if (found) {
-        let {fixIterator} = ChromeUtils.import("resource:///modules/iteratorUtils.jsm", {});
+        let { fixIterator } = ChromeUtils.import(
+          "resource:///modules/iteratorUtils.jsm",
+          {}
+        );
         for (let w of fixIterator(Services.wm.getEnumerator("mail:3pane"))) {
           unMonkeyPatchWindow(w, _menuItems[index]);
         }
@@ -207,12 +227,14 @@ var RestartlessMenuItems = {
 
       if (!keepArray) {
         // Pop out from our list
-        if (found)
+        if (found) {
           _menuItems.splice(index, 1);
+        }
 
         // Stop patching future windows if our list is empty
-        if (_menuItems.length == 0)
+        if (!_menuItems.length) {
           monkeyPatchFutureWindow.unregister();
+        }
       }
     }
   },
@@ -220,11 +242,11 @@ var RestartlessMenuItems = {
   removeAll: function _RestartlessMenuItems_removeAll() {
     if (isThunderbird()) {
       // Remove all added menuitems
-      for (let aMenuItem of _menuItems)
+      for (let aMenuItem of _menuItems) {
         this.remove(aMenuItem, true);
+      }
       _menuItems = [];
       monkeyPatchFutureWindow.unregister();
     }
-  },
-
+  }
 };
