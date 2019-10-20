@@ -35,7 +35,7 @@ var EXPORTED_SYMBOLS = [
   // Higher-level functions
   "msgHdrGetHeaders",
   // Modify messages, raw.
-  "msgHdrsModifyRaw"
+  "msgHdrsModifyRaw",
 ];
 
 // from mailnews/base/public/nsMsgFolderFlags.idl
@@ -55,7 +55,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   MailUtils: "resource:///modules/MailUtils.jsm",
   MessageArchiver: "resource:///modules/MessageArchiver.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  toXPCOMArray: "resource:///modules/iteratorUtils.jsm"
+  toXPCOMArray: "resource:///modules/iteratorUtils.jsm",
 });
 const { MimeMessage, MsgHdrToMimeMessage } = ChromeUtils.import(
   "resource:///modules/gloda/mimemsg.js"
@@ -249,7 +249,7 @@ function msgHdrsMarkAsRead(msgHdrs, read) {
     if (!pending[msgHdr.folder.URI]) {
       pending[msgHdr.folder.URI] = {
         folder: msgHdr.folder,
-        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray)
+        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray),
       };
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
@@ -270,7 +270,7 @@ function msgHdrsDelete(msgHdrs) {
     if (!pending[msgHdr.folder.URI]) {
       pending[msgHdr.folder.URI] = {
         folder: msgHdr.folder,
-        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray)
+        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray),
       };
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
@@ -348,7 +348,7 @@ function HeaderHandler(aHeaders) {
 }
 
 HeaderHandler.prototype = {
-  __proto__: MimeMessage.prototype.__proto__ // == HeaderHandlerBase
+  __proto__: MimeMessage.prototype.__proto__, // == HeaderHandlerBase
 };
 
 /**
@@ -362,7 +362,7 @@ function createStreamListener(k) {
 
     QueryInterface: ChromeUtils.generateQI([
       Ci.nsIStreamListener,
-      Ci.nsIRequestObserver
+      Ci.nsIRequestObserver,
     ]),
 
     // nsIRequestObserver
@@ -384,7 +384,7 @@ function createStreamListener(k) {
         this._stream.init(aInputStream);
       }
       this._data += this._stream.read(aCount);
-    }
+    },
   };
 }
 
@@ -408,7 +408,7 @@ function msgHdrGetHeaders(aMsgHdr, k) {
       },
       true,
       {
-        partsOnDemand: true
+        partsOnDemand: true,
       }
     );
 
@@ -487,7 +487,7 @@ function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
             tempFile.remove(false);
           }
           copyNext();
-        }
+        },
       },
       null
     );

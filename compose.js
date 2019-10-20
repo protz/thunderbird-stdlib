@@ -19,7 +19,7 @@ var EXPORTED_SYMBOLS = [
   "replyAllParams",
   "determineComposeHtml",
   "composeMessageTo",
-  "getSignatureContentsForAccount"
+  "getSignatureContentsForAccount",
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -29,7 +29,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   MailServices: "resource:///modules/MailServices.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
-  Services: "resource://gre/modules/Services.jsm"
+  Services: "resource://gre/modules/Services.jsm",
 });
 
 function importRelative(that, path) {
@@ -41,7 +41,7 @@ const {
   escapeHtml,
   getDefaultIdentity,
   getIdentities,
-  systemCharset
+  systemCharset,
 } = importRelative(this, "misc.js");
 const { msgHdrGetUri, getMail3Pane, msgHdrGetHeaders } = importRelative(
   this,
@@ -102,8 +102,8 @@ function quoteMsgHdr(aMsgHdr, k) {
     QueryInterface: ChromeUtils.generateQI([
       Ci.nsIStreamListener,
       Ci.nsIMsgQuotingOutputStreamListener,
-      Ci.nsIRequestObserver
-    ])
+      Ci.nsIRequestObserver,
+    ]),
   };
   // Here's what we want to stream...
   let msgUri = msgHdrGetUri(aMsgHdr);

@@ -110,12 +110,12 @@ function unMonkeyPatchWindow(w, options) {
 
     if (shouldSwitchToFunc) {
       let tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [
-        { contentPage: options.url }
+        { contentPage: options.url },
       ]);
       while (tabIndex >= 0) {
         tabmail.closeTab(tabIndex, true);
         tabIndex = shouldSwitchToFunc.apply(tabMode.tabType, [
-          { contentPage: options.url }
+          { contentPage: options.url },
         ]);
       }
     }
@@ -153,7 +153,7 @@ monkeyPatchWindowObserver.prototype = {
   },
   unregister() {
     Services.ww.unregisterNotification(this);
-  }
+  },
 };
 
 /**
@@ -248,5 +248,5 @@ var RestartlessMenuItems = {
       _menuItems = [];
       monkeyPatchFutureWindow.unregister();
     }
-  }
+  },
 };

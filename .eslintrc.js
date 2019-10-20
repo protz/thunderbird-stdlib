@@ -6,7 +6,7 @@
 module.exports = {
   env: {
     browser: true,
-    es6: true
+    es6: true,
   },
   // "globals": {
   // },
@@ -16,9 +16,9 @@ module.exports = {
       // This marks exported symbols as used for our modules.
       files: ["*.js"],
       rules: {
-        "mozilla/mark-exported-symbols-as-used": "error"
-      }
-    }
+        "mozilla/mark-exported-symbols-as-used": "error",
+      },
+    },
   ],
   plugins: ["mozilla"],
   rules: {
@@ -35,8 +35,8 @@ module.exports = {
       "error",
       {
         args: "none",
-        vars: "all"
-      }
-    ]
-  }
+        vars: "all",
+      },
+    ],
+  },
 };

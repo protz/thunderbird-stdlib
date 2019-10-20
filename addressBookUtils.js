@@ -12,7 +12,7 @@ var EXPORTED_SYMBOLS = [
   "kPersonalAddressBookUri",
   "kCollectedAddressBookUri",
   "getAddressBookFromUri",
-  "saveEmailInAddressBook"
+  "saveEmailInAddressBook",
 ];
 
 const abManager = Cc["@mozilla.org/abmanager;1"].getService(Ci.nsIAbManager);

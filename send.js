@@ -29,7 +29,7 @@ const {
   getEditorForIframe,
   plainTextToHtml,
   htmlToPlainText,
-  simpleWrap
+  simpleWrap,
 } = importRelative(this, "compose.js");
 const { dumpCallStack, logRoot, setupLogging } = importRelative(
   this,
@@ -100,8 +100,8 @@ FakeEditor.prototype = {
 
   QueryInterface: ChromeUtils.generateQI([
     Ci.nsIEditor,
-    Ci.nsIEditorMailSupport
-  ])
+    Ci.nsIEditorMailSupport,
+  ]),
 };
 // This has to be a root because once the msgCompose has deferred the treatment
 //  of the send process to nsMsgSend.cpp, the nsMsgSend holds a reference to
@@ -391,7 +391,7 @@ function sendMessage(
         } else {
           fields.body = htmlToPlainText(html);
         }
-      }
+      },
     });
 
     params.format = composeHtml
@@ -465,7 +465,7 @@ function sendMessage(
           fields.useMultipartAlternative = true;
           break;
       }
-    }
+    },
   });
 
   // We create a progress listener...
