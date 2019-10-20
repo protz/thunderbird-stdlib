@@ -34,7 +34,7 @@ var EXPORTED_SYMBOLS = [
   // Platform-specific idioms
   "isOSX",
   "isWindows",
-  "isAccel"
+  "isAccel",
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -45,7 +45,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   fixIterator: "resource:///modules/iteratorUtils.jsm",
   MailServices: "resource:///modules/MailServices.jsm",
-  Services: "resource://gre/modules/Services.jsm"
+  Services: "resource://gre/modules/Services.jsm",
 });
 
 if (!Services.intl) {
@@ -204,7 +204,7 @@ function getIdentities(aSkipNntpIdentities = true) {
           isDefault:
             currentIdentity ==
             MailServices.accounts.defaultAccount.defaultIdentity,
-          identity: currentIdentity
+          identity: currentIdentity,
         });
       }
     }
@@ -341,7 +341,7 @@ function parseMimeLine(aMimeLine, aDontFix) {
       return {
         email: emails.value[i],
         name: names.value[i],
-        fullName: fullNames.value[i]
+        fullName: fullNames.value[i],
       };
     });
   } else if (aDontFix) {

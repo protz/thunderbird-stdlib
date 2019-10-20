@@ -4,5 +4,5 @@
 /* eslint sort-keys: "error" */
 
 module.exports = {
-  extends: "plugin:mozilla/xpcshell-test"
+  extends: "plugin:mozilla/xpcshell-test",
 };

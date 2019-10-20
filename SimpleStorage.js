@@ -37,7 +37,7 @@ var SimpleStorage = {
   async openConnection() {
     if (!this._dbConnection) {
       this._dbConnection = await Sqlite.openConnection({
-        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_SIMPLE_STORAGE)
+        path: OS.Path.join(OS.Constants.Path.profileDir, FILE_SIMPLE_STORAGE),
       });
     }
   },
@@ -80,7 +80,7 @@ var SimpleStorage = {
 
         await db.execute(query.replace("#1", tableName), {
           key,
-          value: JSON.stringify({ value })
+          value: JSON.stringify({ value }),
         });
       }
     );
@@ -132,5 +132,5 @@ var SimpleStorage = {
         )
       );
     }
-  }
+  },
 };
