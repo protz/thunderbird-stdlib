@@ -56,70 +56,64 @@ let Log = setupLogging(logRoot + ".Stdlib");
  *  that's suitable for quoting (strip signature, remove images, stuff like
  *  that).
  * @param {nsIMsgDBHdr} aMsgHdr The message header that you want to quote
- * @param {Function} k The continuation. This function will be passed quoted
- *  text suitable for insertion in an HTML editor. You can pass this to
- *  htmlToPlainText if you're running a plaintext editor.
- * @return
+ * @return {Promise}
+ *   Returns a quoted string suitable for insertion in an HTML editor.
+ *   You can pass this to htmlToPlainText if you're running a plaintext editor
  */
-function quoteMsgHdr(aMsgHdr, k) {
-  let chunks = [];
-  // Everyone knows that nsICharsetConverterManager and nsIUnicodeDecoder
-  //  are not to be used from scriptable code, right? And the error you'll
-  //  get if you try to do so is really meaningful, and that you'll have no
-  //  trouble figuring out where the error comes from...
-  let unicodeConverter = Cc[
-    "@mozilla.org/intl/scriptableunicodeconverter"
-  ].createInstance(Ci.nsIScriptableUnicodeConverter);
-  unicodeConverter.charset = "UTF-8";
-  let listener = {
-    /** @ignore*/
-    setMimeHeaders() {},
+function quoteMsgHdr(aMsgHdr) {
+  return new Promise(resolve => {
+    let chunks = [];
+    const decoder = new TextDecoder();
+    let listener = {
+      /** @ignore*/
+      setMimeHeaders() {},
 
-    /** @ignore*/
-    onStartRequest(aRequest) {},
+      /** @ignore*/
+      onStartRequest(aRequest) {},
 
-    /** @ignore*/
-    onStopRequest(aRequest, aStatusCode) {
-      let data = chunks.join("");
-      k(data);
-    },
+      /** @ignore*/
+      onStopRequest(aRequest, aStatusCode) {
+        let data = chunks.join("");
+        resolve(data);
+      },
 
-    /** @ignore*/
-    onDataAvailable(aRequest, aStream, aOffset, aCount) {
-      // Fortunately, we have in Gecko 2.0 a nice wrapper
-      let data = NetUtil.readInputStreamToString(aStream, aCount);
-      // Now each character of the string is actually to be understood as a byte
-      //  of a UTF-8 string.
-      // So charCodeAt is what we want here...
-      let array = [];
-      for (let i = 0; i < data.length; ++i) {
-        array[i] = data.charCodeAt(i);
-      }
-      // Yay, good to go!
-      chunks.push(unicodeConverter.convertFromByteArray(array, array.length));
-    },
+      /** @ignore*/
+      onDataAvailable(aRequest, aStream, aOffset, aCount) {
+        // Fortunately, we have in Gecko 2.0 a nice wrapper
+        let data = NetUtil.readInputStreamToString(aStream, aCount);
+        // Now each character of the string is actually to be understood as a byte
+        //  of a UTF-8 string.
+        // So charCodeAt is what we want here...
+        let array = [];
+        for (let i = 0; i < data.length; ++i) {
+          array[i] = data.charCodeAt(i);
+        }
+        // Yay, good to go!
+        chunks.push(decoder.decode(Uint8Array.from(array)));
+      },
 
-    QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIStreamListener,
-      Ci.nsIMsgQuotingOutputStreamListener,
-      Ci.nsIRequestObserver,
-    ]),
-  };
-  // Here's what we want to stream...
-  let msgUri = msgHdrGetUri(aMsgHdr);
-  /**
-   * Quote a particular message specified by its URI.
-   *
-   * @param charset optional parameter - if set, force the message to be
-   *                quoted using this particular charset
-   */
-  //   void quoteMessage(in string msgURI, in boolean quoteHeaders,
-  //                     in nsIMsgQuotingOutputStreamListener streamListener,
-  //                     in string charset, in boolean headersOnly);
-  let quoter = Cc["@mozilla.org/messengercompose/quoting;1"].createInstance(
-    Ci.nsIMsgQuote
-  );
-  quoter.quoteMessage(msgUri, false, listener, "", false, aMsgHdr);
+      QueryInterface: ChromeUtils.generateQI([
+        Ci.nsIStreamListener,
+        Ci.nsIMsgQuotingOutputStreamListener,
+        Ci.nsIRequestObserver,
+      ]),
+    };
+    // Here's what we want to stream...
+    let msgUri = msgHdrGetUri(aMsgHdr);
+    /**
+     * Quote a particular message specified by its URI.
+     *
+     * @param charset optional parameter - if set, force the message to be
+     *                quoted using this particular charset
+     */
+    //   void quoteMessage(in string msgURI, in boolean quoteHeaders,
+    //                     in nsIMsgQuotingOutputStreamListener streamListener,
+    //                     in string charset, in boolean headersOnly);
+    let quoter = Cc["@mozilla.org/messengercompose/quoting;1"].createInstance(
+      Ci.nsIMsgQuote
+    );
+    quoter.quoteMessage(msgUri, false, listener, "", false, aMsgHdr);
+  });
 }
 
 function getEditorForIframe(aIframe) {
