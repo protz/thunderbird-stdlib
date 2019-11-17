@@ -98,7 +98,7 @@ function unMonkeyPatchWindow(w, options) {
 
   // Remove all menuitem with this id
   while (menuitem) {
-    menuitem.parentNode.removeChild(menuitem);
+    menuitem.remove();
     menuitem = w.document.getElementById(id);
   }
 
