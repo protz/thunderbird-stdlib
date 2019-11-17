@@ -399,7 +399,8 @@ function sendMessage(
       : Ci.nsIMsgCompFormat.PlainText;
     fields.forcePlainText = !composeHtml;
     params.type = mCompType.New;
-    return MailServices.compose.OpenComposeWindowWithParams(null, params);
+    MailServices.compose.OpenComposeWindowWithParams(null, params);
+    return;
   }
   aBody.match({
     plainText(body) {
@@ -481,7 +482,6 @@ function sendMessage(
 
   try {
     gMsgCompose.SendMsg(deliverType, identity, "", null, progress);
-    return gMsgCompose;
   } catch (e) {
     Log.error(e);
     dumpCallStack(e);
