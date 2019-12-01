@@ -238,42 +238,17 @@ function getIdentityForEmail(anEmailAddress) {
  * @return {String} a string containing the formatted date
  */
 function dateAsInMessageList(aDate) {
-  let now = new Date();
+  const now = new Date();
   // Is it today?
-  let isToday =
+  const isToday =
     now.getFullYear() == aDate.getFullYear() &&
     now.getMonth() == aDate.getMonth() &&
     now.getDate() == aDate.getDate();
 
-  // Supports Thunderbird 52 & older.
-  if (!Services.intl) {
-    let format = isToday
-      ? Ci.nsIScriptableDateFormat.dateFormatNone
-      : Ci.nsIScriptableDateFormat.dateFormatShort;
-    // That is an ugly XPCOM call!
-    return MailServices.i18nDateFormatter.FormatDateTime(
-      "",
-      format,
-      Ci.nsIScriptableDateFormat.timeFormatNoSeconds,
-      aDate.getFullYear(),
-      aDate.getMonth() + 1,
-      aDate.getDate(),
-      aDate.getHours(),
-      aDate.getMinutes(),
-      aDate.getSeconds()
-    );
-  }
-
-  let format = isToday
+  const format = isToday
     ? { timeStyle: "short" }
     : { dateStyle: "short", timeStyle: "short" };
-  let dateTimeFormatter;
-  if ("createDateTimeFormat" in Services.intl) {
-    // Thunderbird 58 & earlier.
-    dateTimeFormatter = Services.intl.createDateTimeFormat(undefined, format);
-  } else {
-    dateTimeFormatter = new Services.intl.DateTimeFormat(undefined, format);
-  }
+  const dateTimeFormatter = new Services.intl.DateTimeFormat(undefined, format);
   return dateTimeFormatter.format(aDate);
 }
 
