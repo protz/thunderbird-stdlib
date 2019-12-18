@@ -194,6 +194,9 @@ function getIdentities(aSkipNntpIdentities = true) {
     ) {
       continue;
     }
+    const defaultIdentity = MailServices.accounts.defaultAccount
+      ? MailServices.accounts.defaultAccount.defaultIdentity
+      : null;
     for (let currentIdentity of fixIterator(
       account.identities,
       Ci.nsIMsgIdentity
@@ -201,9 +204,7 @@ function getIdentities(aSkipNntpIdentities = true) {
       // We're only interested in identities that have a real email.
       if (currentIdentity.email) {
         identities.push({
-          isDefault:
-            currentIdentity ==
-            MailServices.accounts.defaultAccount.defaultIdentity,
+          isDefault: currentIdentity == defaultIdentity,
           identity: currentIdentity,
         });
       }
