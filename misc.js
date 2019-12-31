@@ -18,7 +18,6 @@ var EXPORTED_SYMBOLS = [
   "getIdentityForEmail",
   // JS programming helpers
   "range",
-  "MixIn",
   "combine",
   "entries",
   // XPCOM helpers
@@ -112,23 +111,6 @@ function* range(begin, end) {
 function* entries(anObject) {
   for (let key of Object.keys(anObject)) {
     yield [key, anObject[key]];
-  }
-}
-
-/**
- * MixIn-style helper. Adds aMixIn properties, getters and setters to
- *  aConstructor.
- * @param {Object} aConstructor
- * @param {Object} aMixIn
- */
-function MixIn(aConstructor, aMixIn) {
-  let proto = aConstructor.prototype;
-  for (let [name, func] of entries(aMixIn)) {
-    if (name.substring(0, 4) == "get_") {
-      proto.__defineGetter__(name.substring(4), func);
-    } else {
-      proto[name] = func;
-    }
   }
 }
 
