@@ -275,34 +275,30 @@ function escapeHtml(s) {
 
 /**
  * Wraps the low-level header parser stuff.
- * @param {String} aMimeLine a line that looks like "John &lt;john@cheese.com&gt;, Jane &lt;jane@wine.com&gt;"
- * @param {Boolean} aDontFix (optional) Default to false. Shall we return an
- *  empty array in case aMimeLine is empty?
- * @return {Array} a list of { email, name } objects
+ * @param {String} mimeLine
+ *   A line that looks like "John &lt;john@cheese.com&gt;, Jane &lt;jane@wine.com&gt;"
+ * @param {Boolean} [dontFix]
+ *   Defaults to false. Shall we return an empty array in case aMimeLine is empty?
+ * @return {Array}
+ *   A list of { email, name } objects
  */
-function parseMimeLine(aMimeLine, aDontFix) {
-  if (aMimeLine == null) {
+function parseMimeLine(mimeLine, dontFix) {
+  if (mimeLine == null) {
     Log.debug("Empty aMimeLine?!!");
     return [];
   }
-  let emails = {};
-  let fullNames = {};
-  let names = {};
-  let numAddresses = MailServices.headerParser.parseHeadersWithArray(
-    aMimeLine,
-    emails,
-    names,
-    fullNames
-  );
-  if (numAddresses) {
-    return [...range(0, numAddresses)].map(i => {
+  // The null here copes with pre-Thunderbird 71 compatibility.
+  let addresses = MailServices.headerParser.parseEncodedHeader(mimeLine, null);
+  if (addresses.length) {
+    return addresses.map(addr => {
       return {
-        email: emails.value[i],
-        name: names.value[i],
-        fullName: fullNames.value[i],
+        email: addr.email,
+        name: addr.name,
+        fullName: addr.toString(),
       };
     });
-  } else if (aDontFix) {
+  }
+  if (dontFix) {
     return [];
   }
   return [{ email: "", name: "-", fullName: "-" }];
