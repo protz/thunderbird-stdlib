@@ -20,6 +20,7 @@ var EXPORTED_SYMBOLS = [
   "determineComposeHtml",
   "composeMessageTo",
   "getSignatureContentsForAccount",
+  "parse",
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -325,20 +326,16 @@ function plainTextToHtml(txt) {
   return newLines.join("\n");
 }
 
-function parse(aMimeLine) {
-  if (!aMimeLine) {
+function parse(mimeLine) {
+  if (!mimeLine) {
     return [[], []];
   }
-  let emails = {};
-  let fullNames = {};
-  let names = {};
-  MailServices.headerParser.parseHeadersWithArray(
-    aMimeLine,
-    emails,
-    names,
-    fullNames
-  );
-  return [names.value, emails.value];
+  // The null here copes with pre-Thunderbird 71 compatibility.
+  let addresses = MailServices.headerParser.parseEncodedHeader(mimeLine, null);
+  if (addresses[0]) {
+    return [addresses[0].name, addresses[0].email];
+  }
+  return [[], []];
 }
 
 /**
