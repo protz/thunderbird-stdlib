@@ -235,19 +235,6 @@ function dateAsInMessageList(aDate) {
   return dateTimeFormatter.format(aDate);
 }
 
-// eslint-disable-next-line no-control-regex
-const RE_SANITIZE = /[\u0000-\u0008\u000b-\u000c\u000e-\u001f]/g;
-
-/**
- * Helper function to remove non-printable characters from a string -- injecting
- * these in an XML or XHTML document would cause an error.
- * @param {String} s input text
- * @param {String} The sanitized string.
- */
-function sanitize(s) {
-  return (s || "").replace(RE_SANITIZE, "");
-}
-
 /**
  * Helper function to escape some XML chars, so they display properly in
  *  innerHTML.
@@ -257,20 +244,18 @@ function sanitize(s) {
 function escapeHtml(s) {
   s += "";
   // stolen from selectionsummaries.js (thanks davida!)
-  return sanitize(
-    s.replace(/[<>&]/g, function(s) {
-      switch (s) {
-        case "<":
-          return "&lt;";
-        case ">":
-          return "&gt;";
-        case "&":
-          return "&amp;";
-        default:
-          throw Error("Unexpected match");
-      }
-    })
-  );
+  return s.replace(/[<>&]/g, function(s) {
+    switch (s) {
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case "&":
+        return "&amp;";
+      default:
+        throw Error("Unexpected match");
+    }
+  });
 }
 
 /**
