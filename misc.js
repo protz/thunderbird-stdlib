@@ -40,10 +40,14 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const logJSURL = new URL("../log.js", this.__URI__);
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   fixIterator: "resource:///modules/iteratorUtils.jsm",
+  logRoot: logJSURL,
   MailServices: "resource:///modules/MailServices.jsm",
+  setupLogging: logJSURL,
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -57,12 +61,9 @@ if (!Services.intl) {
   );
 }
 
-const { logRoot, setupLogging } = ChromeUtils.import(
-  new URL("../log.js", this.__URI__),
-  null
-);
-
-let Log = setupLogging(logRoot + ".Stdlib");
+XPCOMUtils.defineLazyGetter(this, "Log", () => {
+  return setupLogging(logRoot + ".Stdlib");
+});
 
 let isOSX = AppConstants.platform === "macosx";
 let isWindows = AppConstants.platform === "win";
