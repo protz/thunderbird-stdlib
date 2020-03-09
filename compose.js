@@ -27,9 +27,13 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const logJSURL = new URL("../log.js", this.__URI__);
+
 XPCOMUtils.defineLazyModuleGetters(this, {
+  logRoot: logJSURL,
   MailServices: "resource:///modules/MailServices.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
+  setupLogging: logJSURL,
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -48,7 +52,6 @@ const { msgHdrGetUri, getMail3Pane, msgHdrGetHeaders } = importRelative(
   this,
   "msgHdrUtils.js"
 );
-const { logRoot, setupLogging } = importRelative(this, "../log.js");
 
 let Log = setupLogging(logRoot + ".Stdlib");
 

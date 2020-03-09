@@ -10,10 +10,18 @@
 
 var EXPORTED_SYMBOLS = ["sendMessage"];
 
-const { MailUtils } = ChromeUtils.import("resource:///modules/MailUtils.jsm");
-const { MailServices } = ChromeUtils.import(
-  "resource:///modules/MailServices.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+const logJSURL = new URL("../log.js", this.__URI__);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  logRoot: logJSURL,
+  MailServices: "resource:///modules/MailServices.jsm",
+  MailUtils: "resource:///modules/MailUtils.jsm",
+  setupLogging: logJSURL,
+});
 
 const mCompType = Ci.nsIMsgCompType;
 const isWindows = "@mozilla.org/windows-registry-key;1" in Cc;
@@ -31,12 +39,10 @@ const {
   htmlToPlainText,
   simpleWrap,
 } = importRelative(this, "compose.js");
-const { dumpCallStack, logRoot, setupLogging } = importRelative(
-  this,
-  "../log.js"
-);
 
-let Log = setupLogging(logRoot + ".Send");
+XPCOMUtils.defineLazyGetter(this, "Log", () => {
+  return setupLogging(`${logRoot}.Send`);
+});
 
 /**
  * Get the Archive folder URI depending on the given identity and the given Date
@@ -482,8 +488,7 @@ function sendMessage(
 
   try {
     gMsgCompose.SendMsg(deliverType, identity, "", null, progress);
-  } catch (e) {
-    Log.error(e);
-    dumpCallStack(e);
+  } catch (ex) {
+    console.error(ex);
   }
 }
