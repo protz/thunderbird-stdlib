@@ -51,7 +51,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  entries: new URL("misc.js", this.__URI__),
   MailServices: "resource:///modules/MailServices.jsm",
   MailUtils: "resource:///modules/MailUtils.jsm",
   MessageArchiver: "resource:///modules/MessageArchiver.jsm",
@@ -252,7 +251,7 @@ function msgHdrsMarkAsRead(msgHdrs, read) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
   }
-  for (let [, { folder, msgs }] of entries(pending)) {
+  for (let [, { folder, msgs }] of Object.entries(pending)) {
     folder.markMessagesRead(msgs, read);
     folder.msgDatabase = null; /* don't leak */
   }
@@ -273,7 +272,7 @@ function msgHdrsDelete(msgHdrs) {
     }
     pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
   }
-  for (let [, { folder, msgs }] of entries(pending)) {
+  for (let [, { folder, msgs }] of Object.entries(pending)) {
     folder.deleteMessages(
       msgs,
       getMail3Pane().msgWindow,

@@ -18,11 +18,6 @@ var EXPORTED_SYMBOLS = [
   "getIdentityForEmail",
   // JS programming helpers
   "range",
-  "combine",
-  "entries",
-  // XPCOM helpers
-  "NS_FAILED",
-  "NS_SUCCEEDED",
   // Various formatting helpers
   "dateAsInMessageList",
   "escapeHtml",
@@ -73,26 +68,6 @@ function isAccel(event) {
 }
 
 /**
- * Low-level XPCOM-style macro. You might need this for the composition and
- *  sending listeners which will pass you some status codes.
- * @param {Int} v The status code
- * @return {Bool}
- */
-function NS_FAILED(v) {
-  return v & 0x80000000;
-}
-
-/**
- * Low-level XPCOM-style macro. You might need this for the composition and
- *  sending listeners which will pass you some status codes.
- * @param {Int} v The status code
- * @return {Bool}
- */
-function NS_SUCCEEDED(v) {
-  return !NS_FAILED(v);
-}
-
-/**
  * Python-style range function to use in list comprehensions.
  *  @param {Number} begin
  *  @param {Number} end
@@ -101,17 +76,6 @@ function NS_SUCCEEDED(v) {
 function* range(begin, end) {
   for (let i = begin; i < end; ++i) {
     yield i;
-  }
-}
-
-/**
- * Helper function to simplify iteration over key/value store objects.
- * From https://esdiscuss.org/topic/es6-iteration-over-object-values
- * @param {Object} anObject
- */
-function* entries(anObject) {
-  for (let key of Object.keys(anObject)) {
-    yield [key, anObject[key]];
   }
 }
 
@@ -321,11 +285,4 @@ function systemCharset() {
     }
   }
   return charset;
-}
-
-function combine(a1, a2) {
-  if (a1.length != a2.length) {
-    throw new Error("combine: the given arrays have different lengths");
-  }
-  return [...range(0, a1.length)].map(i => [a1[i], a2[i]]);
 }
