@@ -54,10 +54,28 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   MailServices: "resource:///modules/MailServices.jsm",
   MailUtils: "resource:///modules/MailUtils.jsm",
   MessageArchiver: "resource:///modules/MessageArchiver.jsm",
-  MimeMessage: "resource:///modules/gloda/mimemsg.js",
-  MsgHdrToMimeMessage: "resource:///modules/gloda/mimemsg.js",
   Services: "resource://gre/modules/Services.jsm",
   toXPCOMArray: "resource:///modules/iteratorUtils.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(this, "MimeMessage", () => {
+  let tmp = {};
+  try {
+    ChromeUtils.import("resource:///modules/gloda/mimemsg.js", tmp);
+  } catch (ex) {
+    ChromeUtils.import("resource:///modules/gloda/MimeMessage.jsm", tmp);
+  }
+  return tmp.MimeMessage;
+});
+
+XPCOMUtils.defineLazyGetter(this, "MsgHdrToMimeMessage", () => {
+  let tmp = {};
+  try {
+    ChromeUtils.import("resource:///modules/gloda/mimemsg.js", tmp);
+  } catch (ex) {
+    ChromeUtils.import("resource:///modules/gloda/MimeMessage.jsm", tmp);
+  }
+  return tmp.MsgHdrToMimeMessage;
 });
 
 // Adding a messenger lazy getter to the MailServices even though it's not a service
