@@ -11,8 +11,6 @@
 
 var EXPORTED_SYMBOLS = [
   // Identity management helpers
-  "gIdentities",
-  "fillIdentities",
   "getIdentities",
   "getDefaultIdentity",
   "getIdentityForEmail",
@@ -35,14 +33,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const logJSURL = new URL("../log.js", this.__URI__);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   fixIterator: "resource:///modules/iteratorUtils.jsm",
-  logRoot: logJSURL,
   MailServices: "resource:///modules/MailServices.jsm",
-  setupLogging: logJSURL,
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -55,10 +49,6 @@ if (!Services.intl) {
     "nsIScriptableDateFormat"
   );
 }
-
-XPCOMUtils.defineLazyGetter(this, "Log", () => {
-  return setupLogging(logRoot + ".Stdlib");
-});
 
 let isOSX = AppConstants.platform === "macosx";
 let isWindows = AppConstants.platform === "win";
@@ -76,42 +66,6 @@ function isAccel(event) {
 function* range(begin, end) {
   for (let i = begin; i < end; ++i) {
     yield i;
-  }
-}
-
-/**
- * A global pointer to all the identities known for the user. Feel free to call
- *  fillIdentities again if you feel that the user has updated them!
- * The keys are email addresses, the values are <tt>nsIMsgIdentity</tt> objects.
- *
- * @const
- */
-let gIdentities = {};
-
-/**
- * This function you should call to populate the gIdentities global object. The
- *  recommended time to call this is after the mail-startup-done event, although
- *  doing this at overlay load-time seems to be fine as well.
- * There is a "default" key, that we guarantee to be non-null, by picking the
- *  first account's first valid identity if the default account doesn't have any
- *  valid identity associated.
- * @param aSkipNntp (optional) Should we avoid including nntp identities in the
- *  list?
- * @deprecated Use getIdenties() instead
- */
-function fillIdentities(aSkipNntp) {
-  Log.warn("fillIdentities is deprecated! Use getIdentities instead!");
-  Log.debug("Filling identities with skipnntp = ", aSkipNntp);
-
-  for (let currentIdentity of getIdentities(aSkipNntp)) {
-    gIdentities[currentIdentity.identity.email] = currentIdentity.identity;
-    if (currentIdentity.isDefault) {
-      gIdentities.default = currentIdentity.identity;
-    }
-  }
-
-  if (!("default" in gIdentities)) {
-    gIdentities.default = getIdentities()[0].identity;
   }
 }
 
@@ -158,9 +112,9 @@ function getIdentities(aSkipNntpIdentities = true) {
     }
   }
   if (!identities.length) {
-    Log.warn("Didn't find any identities!");
+    console.warn("Didn't find any identities!");
   } else if (!identities.some(x => x.isDefault)) {
-    Log.warn(
+    console.warn(
       "Didn't find any default key - mark the first identity as default!"
     );
     identities[0].isDefault = true;
@@ -234,7 +188,7 @@ function escapeHtml(s) {
  */
 function parseMimeLine(mimeLine, dontFix) {
   if (mimeLine == null) {
-    Log.debug("Empty aMimeLine?!!");
+    console.debug("Empty aMimeLine?!!");
     return [];
   }
   // The null here copes with pre-Thunderbird 71 compatibility.
