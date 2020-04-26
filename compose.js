@@ -27,13 +27,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const logJSURL = new URL("../log.js", this.__URI__);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
-  logRoot: logJSURL,
   MailServices: "resource:///modules/MailServices.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
-  setupLogging: logJSURL,
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -52,8 +48,6 @@ const { msgHdrGetUri, getMail3Pane, msgHdrGetHeaders } = importRelative(
   this,
   "msgHdrUtils.js"
 );
-
-let Log = setupLogging(logRoot + ".Stdlib");
 
 /**
  * Use the mailnews component to stream a message, and process it in a way
@@ -150,7 +144,6 @@ function composeInIframe(aIframe, { msgHdr, compType, identity }) {
     getMail3Pane(),
     aIframe.docShell
   );
-  Log.debug("editor", getEditorForIframe(aIframe), "iframe", aIframe);
   compose.initEditor(getEditorForIframe(aIframe), aIframe.contentWindow);
 }
 
@@ -503,7 +496,7 @@ function getSignatureContentsForAccount(aIdentity) {
       try {
         cstream.init(fstream, charset, 1024, replacementChar);
       } catch (e) {
-        Log.error(
+        console.error(
           "ConverterInputStream init error: " +
             e +
             "\n charset: " +
@@ -520,7 +513,7 @@ function getSignatureContentsForAccount(aIdentity) {
         signature = htmlToPlainText(signature);
       }
     } catch (e) {
-      Log.error("Signature file stream error: " + e + "\n");
+      console.error("Signature file stream error: " + e + "\n");
     }
     cstream.close();
     fstream.close();
