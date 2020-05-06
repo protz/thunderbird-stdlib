@@ -19,14 +19,9 @@ var EXPORTED_SYMBOLS = [
   // Various formatting helpers
   "dateAsInMessageList",
   "escapeHtml",
-  "sanitize",
   "parseMimeLine",
   // Character set helpers
   "systemCharset",
-  // Platform-specific idioms
-  "isOSX",
-  "isWindows",
-  "isAccel",
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -34,7 +29,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   fixIterator: "resource:///modules/iteratorUtils.jsm",
   MailServices: "resource:///modules/MailServices.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -48,13 +42,6 @@ if (!Services.intl) {
     "@mozilla.org/intl/scriptabledateformat;1",
     "nsIScriptableDateFormat"
   );
-}
-
-let isOSX = AppConstants.platform === "macosx";
-let isWindows = AppConstants.platform === "win";
-
-function isAccel(event) {
-  return (isOSX && event.metaKey) || event.ctrlKey;
 }
 
 /**

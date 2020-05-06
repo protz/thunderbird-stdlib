@@ -13,11 +13,8 @@ var EXPORTED_SYMBOLS = [
   // Low-level XPCOM boring stuff
   "msgHdrToMessageBody",
   "msgHdrToNeckoURL",
-  "msgHdrGetTags",
   "msgUriToMsgHdr",
   "msgHdrGetUri",
-  "msgHdrFromNeckoUrl",
-  "msgHdrSetTags",
   // Quickly identify a message
   "msgHdrIsDraft",
   "msgHdrIsSent",
@@ -25,17 +22,13 @@ var EXPORTED_SYMBOLS = [
   "msgHdrIsInbox",
   "msgHdrIsRss",
   "msgHdrIsNntp",
-  "msgHdrIsJunk",
   // Actions on a set of message headers
-  "msgHdrsMarkAsRead",
   "msgHdrsArchive",
   "msgHdrsDelete",
   // Doesn't really belong here
   "getMail3Pane",
   // Higher-level functions
   "msgHdrGetHeaders",
-  // Modify messages, raw.
-  "msgHdrsModifyRaw",
 ];
 
 // from mailnews/base/public/nsMsgFolderFlags.idl
@@ -43,8 +36,6 @@ const nsMsgFolderFlags_SentMail = 0x00000200;
 const nsMsgFolderFlags_Drafts = 0x00000400;
 const nsMsgFolderFlags_Archive = 0x00004000;
 const nsMsgFolderFlags_Inbox = 0x00001000;
-
-const PR_WRONLY = 0x02;
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -55,7 +46,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   MailUtils: "resource:///modules/MailUtils.jsm",
   MessageArchiver: "resource:///modules/MessageArchiver.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  toXPCOMArray: "resource:///modules/iteratorUtils.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "MimeMessage", () => {
@@ -144,15 +134,6 @@ function msgHdrIsArchive(msgHdr) {
 }
 
 /**
- * Get a nsIMsgDbHdr from a Necko URL.
- * @param {String} The URL
- * @return {nsIMsgDbHdr} The message header.
- */
-function msgHdrFromNeckoUrl(aUrl) {
-  return aUrl.QueryInterface(Ci.nsIMsgMessageUrl).messageHeader;
-}
-
-/**
  * Get a string containing the body of a messsage.
  * @param {nsIMsgDbHdr} aMessageHeader The message header
  * @param {bool} aStripHtml Keep html?
@@ -198,81 +179,6 @@ function msgHdrToNeckoURL(aMsgHdr) {
   let msgService = MailServices.messenger.messageServiceFromURI(uri);
   msgService.GetUrlForUri(uri, neckoURL, null);
   return neckoURL.value;
-}
-
-/**
- * Given a msgHdr, return a list of tag objects. This function
- * just does the messy work of understanding how tags are
- * stored in nsIMsgDBHdrs.
- *
- * @param {nsIMsgDbHdr} aMsgHdr the msgHdr whose tags we want
- * @return {nsIMsgTag array} a list of tag objects
- */
-function msgHdrGetTags(aMsgHdr) {
-  let keywords = aMsgHdr.getStringProperty("keywords");
-  let keywordList = keywords.split(" ");
-  let keywordMap = {};
-  for (let keyword of keywordList) {
-    keywordMap[keyword] = true;
-  }
-
-  let tagArray = MailServices.tags.getAllTags({});
-  let tags = tagArray.filter(tag => tag.key in keywordMap);
-  return tags;
-}
-
-/**
- * Set the tags for a given msgHdr.
- *
- * @param {nsIMsgDBHdr} aMsgHdr
- * @param {nsIMsgTag array} aTags
- */
-function msgHdrSetTags(aMsgHdr, aTags) {
-  let oldTagList = msgHdrGetTags(aMsgHdr);
-  let oldTags = {}; // hashmap
-  for (let tag of oldTagList) {
-    oldTags[tag.key] = null;
-  }
-
-  let newTags = {};
-  let newTagList = aTags;
-  for (let tag of newTagList) {
-    newTags[tag.key] = null;
-  }
-
-  let toAdd = newTagList.filter(x => !(x.key in oldTags)).map(x => x.key);
-  let toRemove = oldTagList.filter(x => !(x.key in newTags)).map(x => x.key);
-
-  let folder = aMsgHdr.folder;
-  let msgHdr = toXPCOMArray([aMsgHdr], Ci.nsIMutableArray);
-  folder.addKeywordsToMessages(msgHdr, toAdd.join(" "));
-  folder.removeKeywordsFromMessages(msgHdr, toRemove.join(" "));
-  aMsgHdr.folder.msgDatabase = null;
-}
-
-/**
- * Mark an array of msgHdrs read (or unread)
- * @param {nsIMsgDbHdr array} msgHdrs The message headers
- * @param {bool} read True to mark them read, false to mark them unread
- */
-function msgHdrsMarkAsRead(msgHdrs, read) {
-  let pending = {};
-  for (let msgHdr of msgHdrs) {
-    if (msgHdr.isRead == read) {
-      continue;
-    }
-    if (!pending[msgHdr.folder.URI]) {
-      pending[msgHdr.folder.URI] = {
-        folder: msgHdr.folder,
-        msgs: Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray),
-      };
-    }
-    pending[msgHdr.folder.URI].msgs.appendElement(msgHdr);
-  }
-  for (let [, { folder, msgs }] of Object.entries(pending)) {
-    folder.markMessagesRead(msgs, read);
-    folder.msgDatabase = null; /* don't leak */
-  }
 }
 
 /**
@@ -342,17 +248,6 @@ function msgHdrIsRss(msgHdr) {
  */
 function msgHdrIsNntp(msgHdr) {
   return msgHdr.folder.server instanceof Ci.nsINntpIncomingServer;
-}
-
-/**
- * Tell if a message has been marked as junk.
- * @param {nsIMsgDbHdr} msgHdr The message header
- * @return {Bool}
- */
-function msgHdrIsJunk(aMsgHdr) {
-  return (
-    aMsgHdr.getStringProperty("junkscore") == Ci.nsIJunkMailPlugin.IS_SPAM_SCORE
-  );
 }
 
 /**
@@ -460,93 +355,5 @@ function msgHdrGetHeaders(aMsgHdr, k) {
     }
   } else {
     fallback();
-  }
-}
-
-/**
- * @param aMsgHdrs The messages to modify
- * @param aTransformer A function which takes the input data, modifies it, and
- * returns the corresponding data. This is the _raw_ contents of the message.
- */
-function msgHdrsModifyRaw(aMsgHdrs, aTransformer) {
-  let toCopy = [];
-  let toDelete = [];
-  let copyNext = () => {
-    dump("msgHdrModifyRaw: copying next\n");
-    let obj = toCopy.pop();
-    if (!obj) {
-      msgHdrsDelete(toDelete);
-      return;
-    }
-
-    let { msgHdr, tempFile } = obj;
-
-    MailServices.copy.CopyFileMessage(
-      tempFile,
-      msgHdr.folder,
-      null,
-      false,
-      msgHdr.flags,
-      msgHdr.getStringProperty("keywords"),
-      {
-        QueryInterface: ChromeUtils.generateQI([Ci.nsIMsgCopyServiceListener]),
-
-        OnStartCopy() {},
-        OnProgress(aProgress, aProgressMax) {},
-        SetMessageKey(aKey) {},
-        GetMessageId(aMessageId) {},
-        OnStopCopy(aStatus) {
-          if (Components.isSuccessCode(aStatus)) {
-            dump("msgHdrModifyRaw: copied successfully\n");
-            toDelete.push(msgHdr);
-            tempFile.remove(false);
-          }
-          copyNext();
-        },
-      },
-      null
-    );
-  };
-
-  let count = aMsgHdrs.length;
-  let tick = function() {
-    if (--count == 0) {
-      copyNext();
-    }
-  };
-
-  for (let aMsgHdr of aMsgHdrs) {
-    let msgHdr = aMsgHdr;
-    let uri = msgHdrGetUri(msgHdr);
-    let messageService = MailServices.messenger.messageServiceFromURI(uri);
-    messageService.streamMessage(
-      uri,
-      createStreamListener(function(aRawString) {
-        let data = aTransformer(aRawString);
-        if (!data) {
-          dump("msgHdrModifyRaw: no data, aborting\n");
-          return;
-        }
-
-        let tempFile = Services.dirsvc.get("TmpD", Ci.nsIFile);
-        tempFile.append("rethread.eml");
-        tempFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("0600", 8));
-
-        let stream = Cc[
-          "@mozilla.org/network/file-output-stream;1"
-        ].createInstance(Ci.nsIFileOutputStream);
-        stream.init(tempFile, PR_WRONLY, parseInt("0600", 8), 0);
-        stream.write(data, data.length);
-        stream.close();
-
-        dump("msgHdrModifyRaw: wrote to file\n");
-        toCopy.push({ tempFile, msgHdr });
-        tick();
-      }),
-      null,
-      null,
-      false,
-      ""
-    );
   }
 }
