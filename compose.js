@@ -41,7 +41,6 @@ const {
   escapeHtml,
   getDefaultIdentity,
   getIdentities,
-  range,
   systemCharset,
 } = importRelative(this, "misc.js");
 const { msgHdrGetUri, getMail3Pane, msgHdrGetHeaders } = importRelative(
@@ -418,7 +417,7 @@ function replyAllParams(aIdentity, aMsgHdr, k) {
       if (emails.length) {
         // Invariant: at this stage, we only have one item in to.
         cc = cc.concat([to[0]]); // move the to in cc
-        to = [...range(0, names.length)].map(i => [names[i], emails[i]]);
+        to = names.map((n, i) => [n, emails[i]]);
       }
     }
     finish(to, cc, bcc);
