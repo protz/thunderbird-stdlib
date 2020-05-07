@@ -14,8 +14,6 @@ var EXPORTED_SYMBOLS = [
   "getIdentities",
   "getDefaultIdentity",
   "getIdentityForEmail",
-  // JS programming helpers
-  "range",
   // Various formatting helpers
   "dateAsInMessageList",
   "escapeHtml",
@@ -33,28 +31,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   MailServices: "resource:///modules/MailServices.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
-
-if (!Services.intl) {
-  // That one doesn't belong to MailServices.
-  XPCOMUtils.defineLazyServiceGetter(
-    MailServices,
-    "i18nDateFormatter",
-    "@mozilla.org/intl/scriptabledateformat;1",
-    "nsIScriptableDateFormat"
-  );
-}
-
-/**
- * Python-style range function to use in list comprehensions.
- *  @param {Number} begin
- *  @param {Number} end
- *  @return {Generator} An iterator that yields from begin to end - 1.
- */
-function* range(begin, end) {
-  for (let i = begin; i < end; ++i) {
-    yield i;
-  }
-}
 
 /**
  * Returns the default identity in the form { boolean isDefault; nsIMsgIdentity identity }
@@ -121,7 +97,7 @@ function getIdentityForEmail(anEmailAddress) {
 }
 
 /**
- * A stupid formatting function that uses the i18nDateFormatter XPCOM component
+ * A stupid formatting function that uses Services.intl
  * to format a date just like in the message list
  * @param {Date} aDate a javascript Date object
  * @return {String} a string containing the formatted date

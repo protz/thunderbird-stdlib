@@ -30,7 +30,6 @@ function importRelative(that, path) {
   return ChromeUtils.import(new URL(path, that.__URI__));
 }
 
-const { range } = importRelative(this, "misc.js");
 const { msgUriToMsgHdr } = importRelative(this, "msgHdrUtils.js");
 const {
   determineComposeHtml,
@@ -244,9 +243,9 @@ function sendMessage(
         "Can't edit more than one message at a time"
       );
       let msgHdr = msgUriToMsgHdr(urls[0]);
-      references = [...range(0, msgHdr.numReferences)].map(i =>
-        msgHdr.getStringReference(i)
-      );
+      for (let i = 0; i < msgHdr.numReferences; i++) {
+        references.push(msgHdr.getStringReference(i));
+      }
       break;
     }
 
@@ -262,9 +261,9 @@ function sendMessage(
         "Can't reply to more than one message at a time"
       );
       let msgHdr = msgUriToMsgHdr(urls[0]);
-      references = [...range(0, msgHdr.numReferences)].map(i =>
-        msgHdr.getStringReference(i)
-      );
+      for (let i = 0; i < msgHdr.numReferences; i++) {
+        references.push(msgHdr.getStringReference(i));
+      }
       references.push(msgHdr.messageId);
       break;
     }
